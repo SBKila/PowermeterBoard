@@ -22,6 +22,9 @@
 #define PWBOARD_DEBUG_MSG(...)
 #endif
 
+AsyncWebSocket ws("/pmb/ws");          // access at ws://[esp ip]/pmb/ws
+AsyncEventSource events("pmb/events"); // event source (Server-Sent events)
+
 struct PowermeterBoardSettings
 {
     int tag;
@@ -51,17 +54,7 @@ public:
         delete (m_pPowerMeterDevice);
     }
 
-    static const uint8_t PM1 = D3;
-    static const uint8_t PM2 = D2;
-    static const uint8_t PM3 = D1;
-    static const uint8_t PM4 = D5;
-    static const uint8_t PM5 = D6;
-    static const uint8_t PM6 = D7;
-    static const uint8_t PM7 = D8;
-    static const uint8_t PM8 = D9;
-    static const uint8_t PM9 = D10;
-    static const uint8_t PM10 = D4;
-    static const uint8_t PMB_LED = D0;
+
 
     void setupPersistance()
     {
@@ -71,7 +64,6 @@ public:
         m_DefinitionPersistanceIndex = EEPROMEX.allocate(sizeof(PowermeterDef[10]));
         // manage PowerMeter Data Persistance
         m_DataPersistanceIndex = EEPROMEX.allocate(sizeof(DDS238Data[10]));
-
     }
     void setup(const char *deviceName, Client &pEthClient, const char *openHabMqttUrl, const int openHabMqttport, AsyncWebServer *p_pWiFiServer, fs::FS fs)
     {
@@ -109,7 +101,7 @@ public:
                 for (int i = 0; i < 10; i++)
                 {
                     Powermeter *pPowerMeter = this->m_Powermeters[i];
-                   
+
                     if (NULL != pPowerMeter)
                     {
                         JsonObject obj = doc.createNestedObject();
@@ -153,16 +145,24 @@ public:
         handler->setMethod(HTTP_POST);
         p_pWiFiServer->addHandler(handler);
 
-        // p_pWiFiServer->on(
-        //     "/pmb/pm",
-        //     HTTP_POST,
-        //     [this](AsyncWebServerRequest *request) {
-        //         PWBOARD_DEBUG_MSG("POST /pmb/pm\n");
-        //         request->send(200);
-        //     });
+        // attach AsyncWebSocket
+        ws.onEvent([this](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
+            PWBOARD_DEBUG_MSG("onEvent /pmb/ws\n");
+            if (type == WS_EVT_CONNECT)
+            {
+                PWBOARD_DEBUG_MSG("websocket client connected\n");
+                _broadcastPowerMeterInfo(255, client);
+            }
+            else if (type == WS_EVT_DISCONNECT)
+            {
+                PWBOARD_DEBUG_MSG("Client disconnected\n");
+            }
+        });
+        p_pWiFiServer->addHandler(&ws);
 
+        // attach AsyncEventSource
+        p_pWiFiServer->addHandler(&events);
         p_pWiFiServer->serveStatic("/pmb/", fs, "/pmb/");
-
         restore();
     };
     void restore()
@@ -172,7 +172,8 @@ public:
         // restore pmb settings
         int tag;
         EEPROMEX.get(m_TagPersistanceIndex, tag);
-        if(923!=tag){
+        if (923 != tag)
+        {
             backup();
         }
 
@@ -194,14 +195,14 @@ public:
             if (storedPowerMeterDefinitions[i].dIO != 255)
             {
                 _addPowermeters(storedPowerMeterDefinitions[i]);
-
             }
         }
+
+        ws.enable(true);
     };
     void backup()
     {
         PWBOARD_DEBUG_MSG("Backup\n");
-       
 
         // store powermeter data
         EEPROMEX.put(m_DataPersistanceIndex, m_PowermeterDatasPersistance);
@@ -210,12 +211,12 @@ public:
         PowermeterDef storedPowerMeterDefinitions[10];
         for (int i = 0; i < 10; i++)
         {
-            PWBOARD_DEBUG_MSG("Backup at %d\n",i);
+            PWBOARD_DEBUG_MSG("Backup at %d\n", i);
             if (m_Powermeters[i] != NULL)
             {
                 _printPowermeterDef(m_Powermeters[i]->getDefinition());
                 storedPowerMeterDefinitions[i] = m_Powermeters[i]->getDefinition();
-            } 
+            }
         }
 
         EEPROMEX.put(m_DefinitionPersistanceIndex, storedPowerMeterDefinitions);
@@ -240,6 +241,15 @@ public:
     void suspend(boolean suspend)
     {
         PWBOARD_DEBUG_MSG("suspend %s\n", (suspend) ? "true" : "false");
+
+        // Disable client connections
+        ws.enable(false);
+
+        // Advertise connected clients what's going on
+        ws.textAll("OTA Update Started");
+
+        // Close them
+        ws.closeAll();
     }; //@TODO
 
     String mainHTML_StringProcessor(const String &variable)
@@ -259,21 +269,22 @@ public:
     };
 
 private:
-    const uint8_t PowermeterBoardIO[10] = {PM1, PM2, PM3, PM4, PM5, PM6, PM7, PM8, PM9, PM10};
-    void _printPowermeterDef(PowermeterDef powermeterDef){ 
+    
+    void _printPowermeterDef(PowermeterDef powermeterDef)
+    {
         PWBOARD_DEBUG_MSG("pm dIO %d\n", powermeterDef.dIO);
         PWBOARD_DEBUG_MSG("pm name %s\n", powermeterDef.name);
         PWBOARD_DEBUG_MSG("pm nbTickByKW %d\n", powermeterDef.nbTickByKW);
         PWBOARD_DEBUG_MSG("pm voltage %d\n", powermeterDef.voltage);
         PWBOARD_DEBUG_MSG("pm maxAmp %d\n", powermeterDef.maxAmp);
-        }
+    }
     boolean _addPowermeters(PowermeterDef powermeterDef)
     {
         _printPowermeterDef(powermeterDef);
 
         int powermeterIndex = powermeterDef.dIO - 1;
         Powermeter *pPowermeter = this->m_Powermeters[powermeterIndex];
-        
+
         // allocate a PowerMeter object
         this->m_Powermeters[powermeterIndex] = new Powermeter(
             powermeterDef,
@@ -281,9 +292,9 @@ private:
             // create lambda as persistance callback
             [this, powermeterIndex](DDS238Data data) {
                 this->m_PowermeterDatasPersistance[powermeterIndex] = data;
-            }
-        );
-        
+                this->_broadcastPowerMeterInfo(powermeterIndex,NULL);
+            });
+
         if (NULL == pPowermeter)
         {
             PWBOARD_DEBUG_MSG("add new powermeter %d\n", powermeterDef.dIO);
@@ -298,6 +309,33 @@ private:
 
         return false;
     }
+    void _broadcastPowerMeterInfo(int index, AsyncWebSocketClient *client)
+    {
+         PWBOARD_DEBUG_MSG("_broadcastPowerMeterInfo %s to %s\n",(index==255)?"all":"index",(NULL==client)?"ALL":"client");
+        char response[128];
+        DynamicJsonDocument doc(128);
+
+        for (int i = 0; i < 10; i++)
+        {
+            if (NULL != m_Powermeters[i])
+            {
+                JsonObject obj = doc.createNestedObject();
+                obj["dIO"] = i + 1;
+                obj["cumulative"] = m_PowermeterDatasPersistance[i].cumulative;
+                obj["ticks"] = m_PowermeterDatasPersistance[i].ticks;
+            }
+        }
+        serializeJson(doc, response);
+        if (NULL != client)
+        {
+            client->text(response);
+        }
+        else
+        {
+            ws.textAll(response);
+        }
+    }
+
     // int addPM(JsonObject Name);
     // String getPM(int index);
     // void removePM(int index);

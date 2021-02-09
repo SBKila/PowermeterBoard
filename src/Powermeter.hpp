@@ -11,7 +11,18 @@ struct PowermeterDef
     int voltage = 0;
     int maxAmp = 0;
 };
-
+    static const uint8_t PM1 = D3;
+    static const uint8_t PM2 = D2;
+    static const uint8_t PM3 = D1;
+    static const uint8_t PM4 = D5;
+    static const uint8_t PM5 = D6;
+    static const uint8_t PM6 = D7;
+    static const uint8_t PM7 = D8;
+    static const uint8_t PM8 = D9;
+    static const uint8_t PM9 = D10;
+    static const uint8_t PM10 = D4;
+    static const uint8_t PMB_LED = D0;
+    static const uint8_t PowermeterToBoardIO[10] = {PM1,PM2,PM3,PM4,PM5,PM6,PM7,PM8,PM9,PM10};
 class Powermeter
 {
 public:
@@ -21,7 +32,7 @@ public:
 
         m_pPowermeterAdapter = new HAAdapterDDS238(
             p_Definition.name,
-            p_Definition.dIO,
+            PowermeterToBoardIO[p_Definition.dIO],
             p_Definition.nbTickByKW,
             p_Definition.voltage,
             p_Definition.maxAmp,

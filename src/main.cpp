@@ -115,10 +115,12 @@ void setup()
   // // react to ota session start
   // ArduinoOTA.onStart([]() {
   //   POWERMETERBOARD.suspend(true);
+  //   m_fileSystem.end();
   // });
   // // react to ota session start
   // ArduinoOTA.onEnd([]() {
   //   POWERMETERBOARD.suspend(false);
+  //   m_fileSystem.begin();
   // });
   /******************/
 
