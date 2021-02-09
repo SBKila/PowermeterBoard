@@ -1,0 +1,30 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <title>Wifi Setup</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script type="text/javascript" src="./jquery.min.js"></script>
+    <script type="text/javascript" src="./setup.js"></script>
+</head>
+
+<body>
+    <h2>WIFI Setup</h2>
+    <p id="lstSSID">scanning WIFI ...</p>
+    <form id="form-wifi">
+        <p>
+            <label for="ssid-name">WiFi name (1 to 32 characters):</label>
+            <input type="text" id="ssid-name" name="ssid-name" minlength="1" maxlength="32" size="32"
+                value="%SSIDNAME%">
+        </p>
+        <p>
+            <label for="ssid-pwd">WiFi password (0 to 63 characters):</label>
+            <input type="password" id="ssid-pwd" name="ssid-pwd" minlength="0" maxlength="63" size="32">
+        </p>
+        <p>
+            <input type="button" id="btn-save-settings" value="Submit">
+        </p>
+    </form>
+</body>
+
+</html>

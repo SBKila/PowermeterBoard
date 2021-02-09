@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>PowerMeter</title>
+
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link rel="stylesheet" href="./powermeter.css">
+	<link rel="stylesheet" href="./jquery.mobile.min.css">
+	<!-- <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.5/jquery.mobile.min.css">
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.2/dist/jquery.validate.min.js"></script>
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.5/jquery.mobile.min.js"></script> -->
+	<link rel="apple-touch-icon" sizes="57x57" href="./apple-icon-57.png">
+	<link rel="apple-touch-icon" sizes="60x60" href="./apple-icon-60.png">
+	<link rel="apple-touch-icon" sizes="72x72" href="./apple-icon-72.png">
+	<link rel="apple-touch-icon" sizes="76x76" href="./apple-icon-76.png">
+	<link rel="apple-touch-icon" sizes="114x114" href="./apple-icon-114.png">
+	<link rel="apple-touch-icon" sizes="120x120" href="./apple-icon-120.png">
+	<link rel="apple-touch-icon" sizes="144x144" href="./apple-icon-144.png">
+	<link rel="apple-touch-icon" sizes="152x152" href="./apple-icon-152.png">
+	<link rel="apple-touch-icon" sizes="180x180" href="./apple-icon-180.png">
+	<link rel="icon" type="image/png" sizes="192x192" href="./android-icon-192.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
+	<link rel="icon" type="image/png" sizes="96x96" href="./favicon-96.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png">
+	<link rel="manifest" href="./manifest.json">
+	<meta name="msapplication-TileColor" content="#ffffff">
+	<meta name="msapplication-TileImage" content="./ms-icon-144.png">
+	<meta name="theme-color" content="#ffffff">
+</head>
+
+<body>
+
+	<div data-role="page" id="landing">
+
+		<div data-role="header">
+			<h1>Power Meter Overview</h1>
+		</div><!-- /header -->
+
+		<div role="main" class="ui-content">
+			<div data-role="header">
+				<h1>Powereters</h1>
+				<a href="#addPM" data-icon="plus" class="ui-btn-right" data-iconpos="notext">add</a>
+			</div>
+			<div data-role="collapsible-set" data-theme="c" data-content-theme="d" id='powermeterslist'>
+			</div>
+		</div><!-- /content -->
+
+		<div id="footer" data-role="footer">
+			<img class="logo" src="./KPLogo.svg">
+		</div><!-- /footer -->
+	</div><!-- /page -->
+
+	<div data-role="page" id="addPM">
+		<div data-role="header">
+			<h1>Add new Power Meter</h1>
+		</div><!-- /header -->
+		<div role="main" class="ui-content">
+			<form id="createPMForm" method="POST" url="/powermerter">
+				<label for="pm_ref">Reference:</label>
+				<select name="pm_ref" id="pm_ref" data-native-menu="false">
+					<option value="">Choices connector:</option>
+					<option value="1">PowerMeter 1</option>
+					<option value="2">PowerMeter 2</option>
+					<option value="3">PowerMeter 3</option>
+					<option value="4">PowerMeter 4</option>
+					<option value="5">PowerMeter 5</option>
+					<option value="6">PowerMeter 6</option>
+					<option value="7">PowerMeter 7</option>
+					<option value="8">PowerMeter 8</option>
+					<option value="9">PowerMeter 9</option>
+					<option value="10">PowerMeter 10</option>
+				</select>
+				<label for="pm_name">Name:</label>
+				<input type="text" name="pm_name" value="" id="pm_name">
+				<label for="pm_nbtick">Impuls by kW:</label>
+				<input type number name="pm_nbtick" value="">
+				<label for="pm_voltage">Nominal voltage:</label>
+				<select name="pm_voltage" id="pm_voltage" data-native-menu="false">
+					<option value="">Power suply voltage:</option>
+					<option value="230">230</option>
+					<option value="220">220</option>
+					<option value="240">240</option>
+					<option value="110">110</option>
+					<option value="120">120</option>
+				</select>
+				<label for="pm_maxamp">Max amp:</label>
+				<input name="pm_maxamp" pattern="[0-9]*" value="">
+				<input data-role="submit" type="submit" value="Add"
+					class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-plus">
+				<input data-role="cancel" value="Cancel"
+					class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-plus">
+			</form>
+		</div>
+		<div id="footer" data-role="footer">
+			<img class="logo" src="./KPLogo.svg">
+		</div><!-- /footer -->
+	</div>
+	<script type="text/javascript" src="./jquery.min.js"></script>
+	<script type="text/javascript" src="./jquery.validate.min.js"></script>
+	<script type="text/javascript" src="./jquery.mobile.min.js"></script>
+	<script type="text/javascript" src="./index.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,2 @@
+ #include "EEPROMEX.h"
+EEPROMEXClass EEPROMEX;

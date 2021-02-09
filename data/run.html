@@ -1,0 +1,57 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <title>Power Monitor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+
+<body>
+    <h2>Power monitor %NODENAME%</h2>
+    <div>
+        <p>%VERSION%</p>
+    </div>
+    <div>
+        <p>
+            <span>SSID :</span>
+            <span>%WIFISSID%</span>
+        </p>
+        <p>
+            <span>RSSID :</span>
+            <span>%WIFIRSSI%</span>
+            <span>db</span>
+        </p>
+    </div>
+    <div>
+        <p>
+            <span>PAC :</span>
+            <span>%PACCUMULATIVE%</span>
+            <span>kW</span>
+            <input type="number" id="pac" maxlength="10"><button onclick="$.ajax({type: 'PATCH',url: '/powermeter/PAC', data: $('#pac').val(),processData: false, contentType: 'text'});">update</button>
+            %DEBUGDDS238PAC%
+        </p>
+        <p>
+            <span>ECS :</span>
+            <span>%ECSCUMULATIVE%</span>
+            <span>kW</span>
+            <input type="number" id="ecs" maxlength="10"><button onclick="$.ajax({type: 'PATCH',url: '/powermeter/ECS', data: $('#ecs').val(),processData: false, contentType: 'text'});">update</button>
+            %DEBUGDDS238ECS%
+        </p>
+        <p>
+            <span>Garage :</span>
+            <span>%GARCUMULATIVE%</span>
+            <span>kW</span>
+            <input type="number" id="gar" maxlength="10"><button onclick="$.ajax({type: 'PATCH',url: '/powermeter/GAR', data: $('#gar').val(),processData: false, contentType: 'text'});">update</button>
+            %DEBUGDDS238GAR%
+        </p>
+        <p>
+            <span>Chambre :</span>
+            <span>%CH4CUMULATIVE%</span>
+            <span>kW</span>
+            <input type="number" id="ch4" maxlength="10"><button onclick="$.ajax({type: 'PATCH',url: '/powermeter/CH4', data: $('#ch4').val(),processData: false, contentType: 'text'});">update</button>
+            %DEBUGDDS238CH4%
+        </p>
+    </div>
+    </body>
+</html>
