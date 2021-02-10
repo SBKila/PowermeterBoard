@@ -28,15 +28,23 @@ class Powermeter
 public:
     Powermeter(PowermeterDef p_Definition, HADevice *p_pHADevice, HA_DDS238_PERSISTENT_FUNCTION p_PersistenceFunction)
     {
+        // keep powermeter definition 
         m_Definition = p_Definition;
 
+        // create HomeAssistant Adapter
         m_pPowermeterAdapter = new HAAdapterDDS238(
             p_Definition.name,
-            PowermeterToBoardIO[p_Definition.dIO],
+            PowermeterToBoardIO[p_Definition.dIO-1],
             p_Definition.nbTickByKW,
             p_Definition.voltage,
             p_Definition.maxAmp,
             p_PersistenceFunction);
+
+        // setup HomeAssistant Adapter
+        m_pPowermeterAdapter->setup();
+
+        // link HomeAssistant Adapter to device
+        m_pPowermeterAdapter->setDevice(p_pHADevice);
     }
 
     PowermeterDef getDefinition()

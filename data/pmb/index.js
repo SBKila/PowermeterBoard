@@ -34,7 +34,8 @@ $("#addPM").on("pageinit", function () {
         contentType: "application/json",
         dataType: "json",
         success: function (data, textStatus, jqXHR) {
-          //process data
+          appendNewPowermeter(data);
+          $("#powermeterslist").collapsibleset('refresh');
           $.mobile.changePage("#landing");
         },
         error: function (data, textStatus, jqXHR) {
@@ -59,6 +60,13 @@ jQuery.validator.addMethod(
   }, "erreur expression reguliere"
 );
 
+function appendNewPowermeter(element){
+  var newItem = $('<div>')
+          .attr({ 'data-role': 'collapsible', 'data-collapsed': 'true' })
+          .html('<h3>' + element.name + '<span class="ui-li-count" id="cumulative'+element.dIO+'">12</span></h3>')
+        $("#powermeterslist").append(newItem);
+}
+
 $(document).ready(function () {
 
   $.ajax({
@@ -67,12 +75,7 @@ $(document).ready(function () {
     success: function (data, textStatus, jqXHR) {
       //process data
       console.log("get powermeters ok");
-      data.forEach(function (element) {
-        var newItem = $('<div>')
-          .attr({ 'data-role': 'collapsible', 'data-collapsed': 'true' })
-          .html('<h3>' + element.name + '<span class="ui-li-count" id="cumulative'+element.dIO+'">12</span></h3>')
-        $("#powermeterslist").append(newItem);
-      });
+      data.forEach(element => appendNewPowermeter(element));
       $("#powermeterslist").collapsibleset('refresh');
     },
     error: function (data, textStatus, jqXHR) {

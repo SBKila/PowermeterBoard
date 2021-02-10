@@ -166,7 +166,7 @@ void loop()
 {
   /* OTA */
   //ArduinoOTA.handle();
-  
+  POWERMETERBOARD.loop();
   WIFIMANAGER.loop();
   MDNS.update();
 }
