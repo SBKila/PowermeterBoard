@@ -22,6 +22,8 @@
 #define PWBOARD_DEBUG_MSG(...)
 #endif
 
+#define PMBMAGIC 923
+
 AsyncWebSocket ws("/pmb/ws");          // access at ws://[esp ip]/pmb/ws
 AsyncEventSource events("pmb/events"); // event source (Server-Sent events)
 
@@ -98,14 +100,15 @@ public:
                 boolean atleastone = false;
                 for (int i = 0; i < 10; i++)
                 {
-                    Powermeter *pPowerMeter = this->m_Powermeters[i];
+                    Powermeter *pPowerMeter = m_Powermeters[i];
 
                     if (NULL != pPowerMeter)
                     {
                         atleastone = true;
 
                         JsonObject obj = doc.createNestedObject();
-                        _fillDefinitionToJson(pPowerMeter->getDefinition(),obj);
+                        _fillDefinitionToJson(pPowerMeter->getDefinition(), obj);
+                        _fillPMDatatoJson(pPowerMeter->getDefinition().dIO, obj);
                     }
                 }
 
@@ -136,8 +139,7 @@ public:
 
             if (_addPowermeters(powermeterDef))
             {
-                backup();
-                request->send(200, "application/json", _getDefinitionAsJsonString(powermeterDef));
+                request->send(200, "application/json", _getPowermeterAsJsonString(powermeterDef));
             }
             else
             {
@@ -153,7 +155,7 @@ public:
             if (type == WS_EVT_CONNECT)
             {
                 PWBOARD_DEBUG_MSG("websocket client connected\n");
-                _broadcastPowerMeterInfo(255, client);
+                _broadcastPowerMeterData(255, client);
             }
             else if (type == WS_EVT_DISCONNECT)
             {
@@ -174,7 +176,7 @@ public:
         // restore pmb settings
         int tag;
         EEPROMEX.get(m_TagPersistanceIndex, tag);
-        if (924 != tag)
+        if (PMBMAGIC != tag)
         {
             backup();
         }
@@ -224,9 +226,7 @@ public:
         EEPROMEX.put(m_DefinitionPersistanceIndex, storedPowerMeterDefinitions);
 
         // store powermeter persistance tag
-        EEPROMEX.put(m_TagPersistanceIndex, 923);
-
-        EEPROMEX.commit();
+        EEPROMEX.put(m_TagPersistanceIndex, PMBMAGIC);
     }
 
     void loop()
@@ -237,6 +237,10 @@ public:
             {
                 m_Powermeters[index]->loop();
             }
+        }
+        if(isPersistanceDirty){
+            backup();
+            isPersistanceDirty=false;
         }
     };
 
@@ -271,7 +275,20 @@ public:
     };
 
 private:
-    void _fillDefinitionToJson(PowermeterDef powermeterDef,JsonObject &obj){
+    void _fillPMDatatoJson(int index, JsonObject &obj)
+    {
+        obj["cumulative"] = m_PowermeterDatasPersistance[index - 1].cumulative;
+        obj["ticks"] = m_PowermeterDatasPersistance[index - 1].ticks;
+    }
+    void _fillDefinitionToJson(int index, JsonObject &obj)
+    {
+        if (NULL != m_Powermeters[index])
+        {
+            _fillDefinitionToJson(m_Powermeters[index]->getDefinition(), obj);
+        }
+    }
+    void _fillDefinitionToJson(PowermeterDef powermeterDef, JsonObject &obj)
+    {
         // allocate the memory for the document
         obj["dIO"] = powermeterDef.dIO;
         obj["name"] = powermeterDef.name;
@@ -279,14 +296,15 @@ private:
         obj["voltage"] = powermeterDef.voltage;
         obj["maxAmp"] = powermeterDef.maxAmp;
     }
-    String _getDefinitionAsJsonString(PowermeterDef powermeterDef)
+    String _getPowermeterAsJsonString(PowermeterDef powermeterDef)
     {
         String response;
-        const size_t CAPACITY = JSON_OBJECT_SIZE(5);
+        const size_t CAPACITY = JSON_OBJECT_SIZE(7);
         StaticJsonDocument<CAPACITY> doc;
         // create an object
         JsonObject obj = doc.to<JsonObject>();
-        _fillDefinitionToJson(powermeterDef,obj);
+        _fillDefinitionToJson(powermeterDef, obj);
+        _fillPMDatatoJson(powermeterDef.dIO, obj);
         serializeJson(obj, response);
         return response;
     }
@@ -299,6 +317,7 @@ private:
         PWBOARD_DEBUG_MSG("pm voltage %d\n", powermeterDef.voltage);
         PWBOARD_DEBUG_MSG("pm maxAmp %d\n", powermeterDef.maxAmp);
     }
+
     boolean _addPowermeters(PowermeterDef powermeterDef)
     {
         uint32_t freeBefore = ESP.getFreeHeap();
@@ -315,8 +334,11 @@ private:
             // create lambda as persistance callback
             [this, powermeterIndex](DDS238Data data) {
                 this->m_PowermeterDatasPersistance[powermeterIndex] = data;
-                this->_broadcastPowerMeterInfo(powermeterIndex, NULL);
+                this->_broadcastPowerMeterData(powermeterIndex, NULL);
+                this->isPersistanceDirty=true;
             });
+
+        this->isPersistanceDirty=true;
 
         if (NULL == pPowermeter)
         {
@@ -334,7 +356,7 @@ private:
     }
     void _broadcastPowerMeterInfo(int index, AsyncWebSocketClient *client)
     {
-        PWBOARD_DEBUG_MSG("_broadcastPowerMeterInfo %s to %s\n", (index == 255) ? "all" : "index", (NULL == client) ? "ALL" : "client");
+        PWBOARD_DEBUG_MSG("_broadcastPowerMeterInfo %d to %s\n", index , (NULL == client) ? "ALL" : "client");
         char response[512];
         DynamicJsonDocument doc(512);
 
@@ -342,7 +364,46 @@ private:
 
         for (int i = 0; i < 10; i++)
         {
-            //PWBOARD_DEBUG_MSG("_broadcastPowerMeterInfo %d %sexist\n",i, (NULL != this->m_Powermeters[i])?"":"not ");
+            //PWBOARD_DEBUG_MSG("_broadcastPowerMeterData %d %sexist\n",i, (NULL != this->m_Powermeters[i])?"":"not ");
+            if (
+                (NULL != this->m_Powermeters[i]) &&
+                ((i == index) || (index == 255)))
+            {
+                atleastone = true;
+                JsonObject obj = doc.createNestedObject();
+                _fillDefinitionToJson(i, obj);
+                _fillPMDatatoJson(i, obj);
+            }
+        }
+        if (atleastone)
+        {
+            serializeJson(doc, response);
+        }
+        else
+        {
+            strcpy(response, "[]");
+        }
+
+        if (NULL != client)
+        {
+            client->text(response);
+        }
+        else
+        {
+            ws.textAll(response);
+        }
+    }
+    void _broadcastPowerMeterData(int index, AsyncWebSocketClient *client)
+    {
+        PWBOARD_DEBUG_MSG("_broadcastPowerMeterData %d to %s\n", index, (NULL == client) ? "ALL" : "client");
+        char response[512];
+        DynamicJsonDocument doc(512);
+
+        boolean atleastone = false;
+
+        for (int i = 0; i < 10; i++)
+        {
+            //PWBOARD_DEBUG_MSG("_broadcastPowerMeterData %d %sexist\n",i, (NULL != this->m_Powermeters[i])?"":"not ");
             if (
                 (NULL != this->m_Powermeters[i]) &&
                 ((i == index) || (index == 255)))
@@ -390,6 +451,8 @@ private:
     int m_SettingsPersistanceIndex;
     int m_DataPersistanceIndex;
     int m_DefinitionPersistanceIndex;
+
+    boolean isPersistanceDirty=false;
 };
 
 PowermeterBoard POWERMETERBOARD;

@@ -139,9 +139,6 @@ public:
         if (isSettingsDirty)
         {
             EEPROMEX.put(m_SettingsPersistanceIndex, m_SettingsData);
-            noInterrupts();
-            EEPROMEX.commit();
-            interrupts();
             isSettingsDirty = false;
         }
     }

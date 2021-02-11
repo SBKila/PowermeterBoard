@@ -16,7 +16,7 @@
 #ifdef DEBUG_MAIN
 #ifdef DEBUG_ESP_PORT
 #define MAIN_DEBUG_INIT(x) DEBUG_ESP_PORT.begin(x)
-#define MAIN_DEBUG_MSG(...)       \
+#define MAIN_DEBUG_MSG(...)        \
   DEBUG_ESP_PORT.print("[MAIN] "); \
   DEBUG_ESP_PORT.printf(__VA_ARGS__)
 #else
@@ -72,7 +72,7 @@ void setup()
   EEPROMEX.begin();
   EEPROMEX.get(_SettingsPersistanceIndex, _SettingsData);
   _IsSettingsDirty = false;
-  MAIN_DEBUG_MSG("%setting available\n", isSettingsDefined()?"S":"No s");
+  MAIN_DEBUG_MSG("%setting available\n", isSettingsDefined() ? "S" : "No s");
   /**************************/
 
   /**************************/
@@ -169,4 +169,8 @@ void loop()
   POWERMETERBOARD.loop();
   WIFIMANAGER.loop();
   MDNS.update();
+  
+  noInterrupts();
+  EEPROMEX.commit();
+  interrupts();
 }

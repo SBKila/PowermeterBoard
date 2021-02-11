@@ -63,7 +63,7 @@ jQuery.validator.addMethod(
 function appendNewPowermeter(element){
   var newItem = $('<div>')
           .attr({ 'data-role': 'collapsible', 'data-collapsed': 'true' })
-          .html('<h3>' + element.name + '<span class="ui-li-count" id="cumulative'+element.dIO+'">12</span></h3>')
+          .html('<h3>' + element.name + '<span class="ui-li-count" id="cumulative'+element.dIO+'">'+element.cumulative+'</span></h3>')
         $("#powermeterslist").append(newItem);
 }
 
