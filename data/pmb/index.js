@@ -60,11 +60,11 @@ jQuery.validator.addMethod(
   }, "erreur expression reguliere"
 );
 
-function appendNewPowermeter(element){
+function appendNewPowermeter(element) {
   var newItem = $('<div>')
-          .attr({ 'data-role': 'collapsible', 'data-collapsed': 'true' })
-          .html('<h3>' + element.name + '<span class="ui-li-count" id="cumulative'+element.dIO+'">'+element.cumulative+'</span></h3>')
-        $("#powermeterslist").append(newItem);
+    .attr({ 'data-role': 'collapsible', 'data-collapsed': 'true' })
+    .html('<h3>' + element.name + '<span class="ui-li-count" id="cumulative' + element.dIO + '">' + element.cumulative + '</span></h3>')
+  $("#powermeterslist").append(newItem);
 }
 
 $(document).ready(function () {
@@ -86,14 +86,15 @@ $(document).ready(function () {
 
   var wsURI = ((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/pmb/ws";
   var ws = new WebSocket(wsURI);
-
-
   ws.onopen = function (evt) { console.log("Connection open ..."); };
-  ws.onmessage = function (evt) { 
-    console.log("Received Message: " + evt.data);
-    JSON.parse(evt.data).forEach(function(element) {
-        $("#cumulative"+element.dIO).html(element.cumulative);
-    } ) 
+  ws.onmessage = function (evt) {
+    var pmdEvent = JSON.parse(evt.data);
+    console.log("Received Message: " + pmdEvent.type);
+    if (pmdEvent.type === "pdu") {
+        pmdEvent.datas.forEach(function (element) {
+        $("#cumulative" + element.dIO).html(element.cumulative);
+      })
+    }
   };
   ws.onclose = function (evt) { console.log("Connection closed."); };
   ws.onerror = function (evt) { console.log("WebSocket error : " + evt.data) };
