@@ -155,7 +155,8 @@ public:
             if (type == WS_EVT_CONNECT)
             {
                 PWBOARD_DEBUG_MSG("websocket client connected\n");
-                _broadcastPowerMeterData(255, client);
+                _broadcastPowerMeterInfo(255, client);
+                _broadcastMQTTConnectionStatus(client);
             }
             else if (type == WS_EVT_DISCONNECT)
             {
@@ -238,10 +239,16 @@ public:
                 m_Powermeters[index]->loop();
             }
         }
-        if(isPersistanceDirty){
+        if (isPersistanceDirty)
+        {
             backup();
-            isPersistanceDirty=false;
+            isPersistanceDirty = false;
         }
+        // if (m_pPowerMeterDevice->isMqttconnected() != isMqttconnected)
+        // {
+        //     _broadcastMQTTConnectionStatus(NULL);
+        //     isMqttconnected != isMqttconnected; 
+        // }
     };
 
     void suspend(boolean suspend)
@@ -271,6 +278,8 @@ public:
             return String(m_PowermeterBoardSettings.openhab_mqtt_port);
         if (variable == "MQTTLOGIN")
             return String(m_PowermeterBoardSettings.openhab_mqtt_login);
+        if(variable == "MQTTCONNECTIONSTATUS")
+            return m_pPowerMeterDevice->isMqttconnected()?"Connected":"Disconnected";
         return "";
     };
 
@@ -321,10 +330,10 @@ private:
     boolean _addPowermeters(PowermeterDef powermeterDef)
     {
         uint32_t freeBefore = ESP.getFreeHeap();
-        PWBOARD_DEBUG_MSG(" free heap %d", freeBefore);
+        PWBOARD_DEBUG_MSG(" free heap %d\n", freeBefore);
         //_printPowermeterDef(powermeterDef);
 
-        int powermeterIndex = powermeterDef.dIO - 1;
+        uint8 powermeterIndex = powermeterDef.dIO - 1;
         Powermeter *pPowermeter = this->m_Powermeters[powermeterIndex];
 
         // allocate a PowerMeter object
@@ -335,10 +344,10 @@ private:
             [this, powermeterIndex](DDS238Data data) {
                 this->m_PowermeterDatasPersistance[powermeterIndex] = data;
                 this->_broadcastPowerMeterData(powermeterIndex, NULL);
-                this->isPersistanceDirty=true;
+                this->isPersistanceDirty = true;
             });
 
-        this->isPersistanceDirty=true;
+        this->isPersistanceDirty = true;
 
         if (NULL == pPowermeter)
         {
@@ -354,75 +363,157 @@ private:
 
         return false;
     }
+
     void _broadcastPowerMeterInfo(int index, AsyncWebSocketClient *client)
     {
-        PWBOARD_DEBUG_MSG("_broadcastPowerMeterInfo %d to %s\n", index , (NULL == client) ? "ALL" : "client");
-        char response[512];
-        DynamicJsonDocument doc(512);
+        PWBOARD_DEBUG_MSG("_broadcastPowerMeterInfo %d to %s\n", index, (NULL == client) ? "ALL" : "client");
 
-        boolean atleastone = false;
+        const size_t CAPACITY = JSON_OBJECT_SIZE(7);
+        int nbElement = 0;
 
-        for (int i = 0; i < 10; i++)
+        if (index == 255)
         {
-            //PWBOARD_DEBUG_MSG("_broadcastPowerMeterData %d %sexist\n",i, (NULL != this->m_Powermeters[i])?"":"not ");
-            if (
-                (NULL != this->m_Powermeters[i]) &&
-                ((i == index) || (index == 255)))
+            for (int i = 0; i < 10; i++)
             {
-                atleastone = true;
-                JsonObject obj = doc.createNestedObject();
-                _fillDefinitionToJson(i, obj);
-                _fillPMDatatoJson(i, obj);
+                if (NULL != this->m_Powermeters[i])
+                {
+                    nbElement++;
+                }
             }
         }
-        if (atleastone)
-        {
-            serializeJson(doc, response);
-        }
         else
         {
-            strcpy(response, "[]");
+            nbElement = 1;
         }
 
-        if (NULL != client)
-        {
-            client->text(response);
-        }
-        else
-        {
-            ws.textAll(response);
-        }
-    }
-    void _broadcastPowerMeterData(int index, AsyncWebSocketClient *client)
-    {
-        PWBOARD_DEBUG_MSG("_broadcastPowerMeterData %d to %s\n", index, (NULL == client) ? "ALL" : "client");
-        char response[512];
-        DynamicJsonDocument doc(512);
-
-        boolean atleastone = false;
+        DynamicJsonDocument doc(nbElement * CAPACITY);
+        JsonArray root = doc.to<JsonArray>();
+        PWBOARD_DEBUG_MSG("_broadcastPowerMeterInfo %d \n", nbElement);
 
         for (int i = 0; i < 10; i++)
         {
-            //PWBOARD_DEBUG_MSG("_broadcastPowerMeterData %d %sexist\n",i, (NULL != this->m_Powermeters[i])?"":"not ");
             if (
                 (NULL != this->m_Powermeters[i]) &&
                 ((i == index) || (index == 255)))
             {
-                atleastone = true;
+                PWBOARD_DEBUG_MSG("_broadcastPowerMeterInfo adding %d \n", i);
+                JsonObject obj = root.createNestedObject();
+                _fillDefinitionToJson(i, obj);
+                _fillPMDatatoJson(i, obj);
+                if (index != 255)
+                    break;
+            }
+        }
+
+        _broadcastEvent("pi", root, client);
+    }
+
+    void _broadcastPowerMeterData(uint8 index, AsyncWebSocketClient *client)
+    {
+        PWBOARD_DEBUG_MSG("_broadcastPowerMeterData %d to %s\n", index, (NULL == client) ? "ALL" : "client");
+
+        const size_t CAPACITY = JSON_OBJECT_SIZE(3);
+        int nbElement = 0;
+
+        if (index == 255)
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                if (NULL != this->m_Powermeters[i])
+                {
+                    nbElement++;
+                }
+            }
+        }
+        else
+        {
+            nbElement = 1;
+        }
+
+        DynamicJsonDocument doc(nbElement * CAPACITY);
+
+        for (int i = 0; i < 10; i++)
+        {
+            if (
+                (NULL != this->m_Powermeters[i]) &&
+                ((i == index) || (index == 255)))
+            {
                 JsonObject obj = doc.createNestedObject();
                 obj["dIO"] = i + 1;
                 obj["cumulative"] = m_PowermeterDatasPersistance[i].cumulative;
                 obj["ticks"] = m_PowermeterDatasPersistance[i].ticks;
+                if (index != 255)
+                    break;
             }
         }
-        if (atleastone)
+
+        JsonVariant eventDatas = doc.as<JsonVariant>();
+        _broadcastEvent("pdu", eventDatas, client);
+    }
+
+    void _broadcastMQTTConnectionStatus(AsyncWebSocketClient *client)
+    {
+        // allocate the memory for the document
+        DynamicJsonDocument doc(10);
+        // create a variant
+        JsonVariant mqttStatusEvent = doc.to<JsonVariant>();
+        mqttStatusEvent.set(isMqttconnected);
+
+        _broadcastEvent("msc", mqttStatusEvent, client);
+    }
+    void _broadcastEvent(const char *eventType, const JsonArray &eventDatas, AsyncWebSocketClient *client)
+    {
+        PWBOARD_DEBUG_MSG("_broadcastEvent array %s to %s\n", eventType, (NULL == client) ? "ALL" : "client");
+        String response;
+        const size_t CAPACITY = JSON_OBJECT_SIZE(3);
+
+        DynamicJsonDocument doc(1024);
+        doc["type"] = eventType;
+        doc["datas"] = eventDatas;
+
+        serializeJson(doc, response);
+
+        if (NULL != client)
         {
-            serializeJson(doc, response);
+            client->text(response);
         }
         else
         {
-            strcpy(response, "[]");
+            ws.textAll(response);
         }
+    }
+    void _broadcastEvent(const char *eventType, const JsonVariant &eventDatas, AsyncWebSocketClient *client)
+    {
+        PWBOARD_DEBUG_MSG("_broadcastEvent variant %s to %s\n", eventType, (NULL == client) ? "ALL" : "client");
+        String response;
+        const size_t CAPACITY = JSON_OBJECT_SIZE(3);
+
+        DynamicJsonDocument doc(CAPACITY);
+        doc["type"] = eventType;
+        doc["datas"] = eventDatas;
+
+        serializeJson(doc, response);
+
+        if (NULL != client)
+        {
+            client->text(response);
+        }
+        else
+        {
+            ws.textAll(response);
+        }
+    }
+    void _broadcastEvent(const char *eventType, const JsonObject &eventDatas, AsyncWebSocketClient *client)
+    {
+        PWBOARD_DEBUG_MSG("_broadcastEvent document %s to %s\n", eventType, (NULL == client) ? "ALL" : "client");
+        String response;
+        const size_t CAPACITY = JSON_OBJECT_SIZE(3);
+
+        DynamicJsonDocument doc(CAPACITY);
+        doc["type"] = eventType;
+        doc["datas"] = eventDatas;
+
+        serializeJson(doc, response);
 
         if (NULL != client)
         {
@@ -434,6 +525,7 @@ private:
         }
     }
 
+    //
     // int addPM(JsonObject Name);
     // String getPM(int index);
     // void removePM(int index);
@@ -452,7 +544,8 @@ private:
     int m_DataPersistanceIndex;
     int m_DefinitionPersistanceIndex;
 
-    boolean isPersistanceDirty=false;
+    boolean isPersistanceDirty = false;
+    boolean isMqttconnected = false;
 };
 
 PowermeterBoard POWERMETERBOARD;
