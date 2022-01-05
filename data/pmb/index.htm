@@ -8,10 +8,6 @@
 
 	<link rel="stylesheet" href="./powermeter.css">
 	<link rel="stylesheet" href="./jquery.mobile.min.css">
-	<!-- <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.5/jquery.mobile.min.css">
-	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.2/dist/jquery.validate.min.js"></script>
-	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.5/jquery.mobile.min.js"></script> -->
 	<link rel="apple-touch-icon" sizes="57x57" href="./apple-icon-57.png">
 	<link rel="apple-touch-icon" sizes="60x60" href="./apple-icon-60.png">
 	<link rel="apple-touch-icon" sizes="72x72" href="./apple-icon-72.png">
@@ -49,7 +45,7 @@
 				<p>Url:%MQTTURL%</p>
 				<p>Port:%MQTTPORT%</p>
 				<p>Login:%MQTTLOGIN%</p>
-				<p>Status:%MQTTCONNECTIONSTATUS%</p>
+				<p>Status:<span id="HA_status">%MQTTCONNECTIONSTATUS%</span></p>
 				<!-- Class added to the wrapper -->
 				<div class="ui-btn ui-shadow ui-corner-all ui-icon-delete ui-btn-icon-notext ui-btn-b ui-btn-inline">Delete</div>
 				<a class="ui-btn ui-shadow ui-corner-all ui-icon-plus ui-btn-icon-notext ui-btn-b ui-btn-inline">Plus</a>
@@ -79,7 +75,7 @@
 		<div role="main" class="ui-content">
 			<form id="createPMForm" method="POST" url="/powermerter">
 				<label for="pm_ref">Reference:</label>
-				<select name="pm_ref" id="pm_ref" data-native-menu="false">
+				<select name="pm_ref" id="createPMForm_pm_ref" data-native-menu="false">
 					<option value="">Choices connector:</option>
 					<option value="1">PowerMeter 1</option>
 					<option value="2">PowerMeter 2</option>

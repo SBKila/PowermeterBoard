@@ -86,7 +86,7 @@ public:
                     "/pmb/index.htm",
                     "text/html; charset=utf-8",
                     false,
-                    [this](const String &var) -> String { return this->mainHTML_StringProcessor(var); });
+                    [this](const String &var) -> String { return this->stringProcessor(var); });
             });
 
         // Get list of configured powermeter
@@ -216,10 +216,10 @@ public:
         PowermeterDef storedPowerMeterDefinitions[10];
         for (int i = 0; i < 10; i++)
         {
-            PWBOARD_DEBUG_MSG("Backup at %d\n", i);
             if (m_Powermeters[i] != NULL)
             {
-                _printPowermeterDef(m_Powermeters[i]->getDefinition());
+                //PWBOARD_DEBUG_MSG("Backup at %d\n", i);
+                //_printPowermeterDef(m_Powermeters[i]->getDefinition());
                 storedPowerMeterDefinitions[i] = m_Powermeters[i]->getDefinition();
             }
         }
@@ -265,9 +265,9 @@ public:
         ws.closeAll();
     }; //@TODO
 
-    String mainHTML_StringProcessor(const String &variable)
+    String stringProcessor(const String &variable)
     {
-        PWBOARD_DEBUG_MSG("mainHTML_StringProcessor %s\n", &variable);
+        PWBOARD_DEBUG_MSG("PowermetersBoard_StringProcessor %s\n", &variable);
         if (variable == "NODENAME")
             return m_PowermeterBoardSettings.node_name;
         if (variable == "SSIDNAME")
@@ -411,8 +411,7 @@ private:
     void _broadcastPowerMeterData(uint8 index, AsyncWebSocketClient *client)
     {
         PWBOARD_DEBUG_MSG("_broadcastPowerMeterData %d to %s\n", index, (NULL == client) ? "ALL" : "client");
-
-        const size_t CAPACITY = JSON_OBJECT_SIZE(3);
+        const size_t CAPACITY = JSON_OBJECT_SIZE(4);
         int nbElement = 0;
 
         if (index == 255)
@@ -431,6 +430,7 @@ private:
         }
 
         DynamicJsonDocument doc(nbElement * CAPACITY);
+        JsonArray root = doc.to<JsonArray>();
 
         for (int i = 0; i < 10; i++)
         {
@@ -438,17 +438,14 @@ private:
                 (NULL != this->m_Powermeters[i]) &&
                 ((i == index) || (index == 255)))
             {
-                JsonObject obj = doc.createNestedObject();
+                JsonObject obj = root.createNestedObject();
                 obj["dIO"] = i + 1;
-                obj["cumulative"] = m_PowermeterDatasPersistance[i].cumulative;
-                obj["ticks"] = m_PowermeterDatasPersistance[i].ticks;
+                _fillPMDatatoJson(i+1,obj);
                 if (index != 255)
                     break;
             }
         }
-
-        JsonVariant eventDatas = doc.as<JsonVariant>();
-        _broadcastEvent("pdu", eventDatas, client);
+        _broadcastEvent("pdu", root, client);
     }
 
     void _broadcastMQTTConnectionStatus(AsyncWebSocketClient *client)
@@ -465,7 +462,7 @@ private:
     {
         PWBOARD_DEBUG_MSG("_broadcastEvent array %s to %s\n", eventType, (NULL == client) ? "ALL" : "client");
         String response;
-        const size_t CAPACITY = JSON_OBJECT_SIZE(3);
+        //const size_t CAPACITY = JSON_OBJECT_SIZE(3);
 
         DynamicJsonDocument doc(1024);
         doc["type"] = eventType;
@@ -493,7 +490,7 @@ private:
         doc["datas"] = eventDatas;
 
         serializeJson(doc, response);
-
+        PWBOARD_DEBUG_MSG("_broadcastEvent %s\n",response.c_str());
         if (NULL != client)
         {
             client->text(response);

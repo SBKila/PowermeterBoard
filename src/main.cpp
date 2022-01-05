@@ -20,11 +20,11 @@
   DEBUG_ESP_PORT.print("[MAIN] "); \
   DEBUG_ESP_PORT.printf(__VA_ARGS__)
 #else
-#define DEBUG_INIT(x)
+#define MAIN_DEBUG_INIT(x)
 #define MAIN_DEBUG_MSG(...)
 #endif
 #else
-#define DEBUG_INIT(x)
+#define MAIN_DEBUG_INIT(x)
 #define MAIN_DEBUG_MSG(...)
 #endif
 
@@ -134,7 +134,7 @@ void setup()
   else
   {
     m_WiFiServer.serveStatic("/", m_fileSystem, "/").setTemplateProcessor([](const String &var) -> String {
-      MAIN_DEBUG_MSG("main TemplateProcessor");
+      MAIN_DEBUG_MSG("main TemplateProcessor %s\n", &var);
       String value = WIFIMANAGER.setupTemplateProcessor(var);
       if (value.length() == 0)
       {
@@ -161,9 +161,22 @@ void setup()
   m_WiFiServer.begin();
   MAIN_DEBUG_MSG("Setup ending\n");
 }
-
+boolean isfirst = true;
+uint32_t freePreviousLoop =  0;
+uint32_t memleak = 0;
 void loop()
 {
+  if(isfirst){
+    isfirst = false;
+    freePreviousLoop=ESP.getFreeHeap();
+    memleak=0;
+  };
+  uint32_t freeHeap = ESP.getFreeHeap();
+  if(freeHeap!=freePreviousLoop) {
+    PWBOARD_DEBUG_MSG(" free heap %d (%d / %d)\n", freeHeap, freeHeap-freePreviousLoop, memleak+(freeHeap-freePreviousLoop));
+    memleak+=freeHeap-freePreviousLoop;
+    freePreviousLoop = freeHeap;
+  }
   /* OTA */
   //ArduinoOTA.handle();
   POWERMETERBOARD.loop();

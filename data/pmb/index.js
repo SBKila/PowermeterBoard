@@ -1,5 +1,5 @@
 
-$("#addPM").on("pageinit", function () {
+ $("#addPM").on("pagecreate", function () {
   $("#createPMForm").validate({
     rules: {
       pm_ref: {
@@ -49,6 +49,9 @@ $("#addPM").on("pageinit", function () {
   );
 });
 
+$("body").pagecontainer({
+});
+
 jQuery.validator.addMethod(
   "regex",
   function (value, element, regexp) {
@@ -63,8 +66,9 @@ jQuery.validator.addMethod(
 function appendNewPowermeter(element) {
   var newItem = $('<div>')
     .attr({ 'data-role': 'collapsible', 'data-collapsed': 'true' })
-    .html('<h3>' + element.name + '<span class="ui-li-count" id="cumulative' + element.dIO + '">' + element.cumulative + '</span></h3>')
+    .html('<h3>' + element.name + '<span class="ui-li-count" id="cumulative' + element.dIO + '">' + element.cumulative + '</span></h3><p><p>tick:<span id="ticks' + element.dIO+'">'+element.ticks+'</span></p><p>nbTicksByKw:'+element.nbTickByKW+'</p></p>')
   $("#powermeterslist").append(newItem);
+  $("#createPMForm_pm_ref option[value='"+element.dIO+"']").remove();
 }
 
 $(document).ready(function () {
@@ -77,6 +81,7 @@ $(document).ready(function () {
       console.log("get powermeters ok");
       data.forEach(element => appendNewPowermeter(element));
       $("#powermeterslist").collapsibleset('refresh');
+     
     },
     error: function (data, textStatus, jqXHR) {
       //process error msg
@@ -86,18 +91,24 @@ $(document).ready(function () {
 
   var wsURI = ((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/pmb/ws";
   var ws = new WebSocket(wsURI);
-  ws.onopen = function (evt) { console.log("Connection open ..."); };
+  ws.onopen = function (evt) { console.log("WS:Connection open ..."); };
   ws.onmessage = function (evt) {
     var pmdEvent = JSON.parse(evt.data);
-    console.log("Received Message: " + pmdEvent.type);
+    console.log("WS:Received Message: " + pmdEvent.type);
     if (pmdEvent.type === "pdu") {
-        pmdEvent.datas.forEach(function (element) {
+      pmdEvent.datas.forEach(function (element) {
         $("#cumulative" + element.dIO).html(element.cumulative);
+        $("#ticks" + element.dIO).html(element.ticks);
       })
     }
+    // MQTT connection status
+    if (pmdEvent.type === "msc") {
+      $("#HA_status").html(pmdEvent.datas?"connected":"disconnected");
+      
+    }
   };
-  ws.onclose = function (evt) { console.log("Connection closed."); };
-  ws.onerror = function (evt) { console.log("WebSocket error : " + evt.data) };
+  ws.onclose = function (evt) { console.log("WS:Connection closed."); };
+  ws.onerror = function (evt) { console.log("WS:WebSocket error : " + evt.data) };
 
 
 });
