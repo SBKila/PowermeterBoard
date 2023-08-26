@@ -63,14 +63,11 @@
 			</div>
 			<div data-role="collapsible-set" data-theme="c" data-content-theme="d" id='powermeterslist'>
 			</div>
-		</div>
-		<div role="main" class="ui-content">
-			<div class="ui-grid-a ui-responsive">
-				<div class="ui-block-a"><input id="btn-reload" type="button" data-icon="recycle" value="Reload" data-iconpos="bottom"></div>
-				<div class="ui-block-b"><input id="btn-upload" type="button" data-icon="action" value="Upload" data-iconpos="bottom" disabled></div>
+		</div><!-- /content -->
 
-			</div>
-
+		<div class="ui-grid-a ui-responsive">
+			<div class="ui-block-a"><a href="#" class="ui-shadow ui-btn ui-corner-all ui-btn-icon-left ui-icon-arrow-l">Reload</a></div>
+			<div class="ui-block-b"><input type="button" data-icon="plus" value="Upload"></div>
 		</div>
 		<div id="footer" data-role="footer">
 			<img class="logo" src="./KPLogo.svg">
@@ -109,8 +106,8 @@
 		</div><!-- /header -->
 		<div role="main" class="ui-content">
 			<form id="createPMForm">
-				<label for="createPMForm_dIO">Reference:</label>
-				<select name="dIO" id="createPMForm_dIO" data-native-menu="false">
+				<label for="pm_ref">Reference:</label>
+				<select name="pm_ref" id="createPMForm_pm_ref" data-native-menu="false">
 					<option value="">Choices connector:</option>
 					<option value="1">PowerMeter 1</option>
 					<option value="2">PowerMeter 2</option>
@@ -123,13 +120,12 @@
 					<option value="9">PowerMeter 9</option>
 					<option value="10">PowerMeter 10</option>
 				</select>
-				<label for="createPMForm_name">Name:</label>
-				<input type="text" name="name" value="" id="createPMForm_name">
-				<label for="createPMForm_nbTickByKW">Impuls by kW:</label>
-				<input type="number" name="nbTickByKW" value="" id="createPMForm_nbTickByKW">
-				
-				<label for="createPMForm_voltage">Nominal voltage:</label>
-				<select name="voltage" id="createPMForm_voltage" data-native-menu="false">
+				<label for="pm_name">Name:</label>
+				<input type="text" name="pm_name" value="" id="pm_name">
+				<label for="pm_nbtick">Impuls by kW:</label>
+				<input type number name="pm_nbtick" value="">
+				<label for="pm_voltage">Nominal voltage:</label>
+				<select name="pm_voltage" id="pm_voltage" data-native-menu="false">
 					<option value="">Power suply voltage:</option>
 					<option value="230">230</option>
 					<option value="220">220</option>
@@ -137,10 +133,10 @@
 					<option value="110">110</option>
 					<option value="120">120</option>
 				</select>
-				<label for="createPMForm_maxAmp">Max amp:</label>
-				<input name="maxAmp" pattern="[0-9]*" value="" id="createPMForm_maxAmp">
-				<label for="createPMForm_cumulative">Current value:</label>
-				<input name="cumulative" pattern="[0-9]*" value="0" id="createPMForm_cumulative">
+				<label for="pm_maxamp">Max amp:</label>
+				<input name="pm_maxamp" pattern="[0-9]*" value="">
+				<label for="pm_value">Current value:</label>
+				<input name="pm_value" pattern="[0-9]*" value="0">
 				<input data-role="submit" type="submit" value="Add" class="ui-btn ui-corner-all">
 				<a href="#" class="ui-btn ui-corner-all" data-rel="back">Cancel</a>
 			</form>
@@ -155,14 +151,12 @@
 		</div><!-- /header -->
 		<div role="main" class="ui-content">
 			<form id="editPMForm">
-				<label for="editpm_ref">Reference:</label>
-				<input readonly type="text" name="dIO" value="" id="editpm_ref">
-				<label for="editpm_name">Name:</label>
-				<input readonly type="text" name="name" value="" id="editpm_name">
-				<label for="editpm_nbtick">Impuls by kW:</label>
-				<input type number name="nbTickByKW" id="editpm_nbtick" value="">
-				<label for="editpm_voltage">Nominal voltage:</label>
-				<select name="voltage" id="editpm_voltage" data-native-menu="false">
+				<input readonly type="text" name="pm_ref" value="" id="editpm_ref">
+				<input readonly type="text" name="pm_name" value="" id="editpm_name">
+				<label for="pm_nbtick">Impuls by kW:</label>
+				<input type number name="pm_nbtick" id="editpm_nbtick" value="">
+				<label for="pm_voltage">Nominal voltage:</label>
+				<select name="pm_voltage" id="editpm_voltage" data-native-menu="false">
 					<option value="">Power suply voltage:</option>
 					<option value="230">230</option>
 					<option value="220">220</option>
@@ -170,10 +164,10 @@
 					<option value="110">110</option>
 					<option value="120">120</option>
 				</select>
-				<label for="editpm_maxamp">Max amp:</label>
-				<input name="maxAmp" id="editpm_maxamp" pattern="[0-9]*" value="">
-				<label for="editpm_value">Current value:</label>
-				<input name="cumulative" id="editpm_value" pattern="[0-9]*" value="0">
+				<label for="pm_maxamp">Max amp:</label>
+				<input name="pm_maxamp" id="editpm_maxamp" pattern="[0-9]*" value="">
+				<label for="pm_value">Current value:</label>
+				<input name="pm_value" id="editpm_value" pattern="[0-9]*" value="0">
 				<input data-role="submit" type="submit" value="Update" class="ui-btn ui-corner-all">
 				<a href="#" class="ui-btn ui-corner-all" data-rel="back">Cancel</a>
 			</form>

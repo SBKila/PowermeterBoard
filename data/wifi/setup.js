@@ -5,8 +5,10 @@ $(document).ready(function () {
             var items = [];
             items.push("<option value=''>select WIFI</option>");
             $.each(data, function (key, val) {
-                console.log(key);
-                items.push("<option value='" + val + "'>" + val + "</option>");
+                if(val){
+                    const values = val.split(" ",1)
+                    items.push("<option value='" + values[0] + "'>" + val + "</option>");
+                }
             });
             $("#lstSSID").html(
                 $("<select/>", {
@@ -14,7 +16,7 @@ $(document).ready(function () {
                 })
             );
             $("#lstSSID > select").on("change", function(){
-                const ssid = $(this).children("option:selected").val();
+                const ssid = $(this).children("option:selected").attr("value");
                 if('' !== ssid) {
                     $("#ssid-name").val(ssid);
                 }
