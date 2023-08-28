@@ -12,10 +12,14 @@ Next: Add Edit PowerMeter Settings
 20/08/23 Updating HAAdapterDDS238 to merge with thingspeak release
 21/08/23 Correctly manage Update cumulative VS Full AdapterDDS238
 Think about moving adapter to PMBoard project => it is not HA lib
+27/08/23 Change UI for save all and reboot (PM part).
+28/08/23 Fix UI add remove PM issues ==> disable item in menu list PM reference  
 
 
 @todo
 => Understanb how to manage connection to MQTT server full connected or connect on demand ?? 
 => next debug MQTT login+password when nothing is set
 for now isSetup flag is unsed as work around
-=> 
+=> Think about moving adapter to PMBoard project => it is not HA lib
+=> Add action warning in UI
+=> Change UI for save all and reboot (MQTT part)

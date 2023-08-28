@@ -36,7 +36,10 @@ $("#setMQTT").on("pagecreate", function () {
     }
   });
 });
-
+let selectPmSelectInitialized=false;
+$("#addPM").on("pageinit", function (event) {
+  selectPmSelectInitialized=true;
+})
 $("#addPM").on("pagecreate", function () {
   $("#createPMForm").validate({
     rules: {
@@ -175,7 +178,7 @@ $('body').on('click', 'a[pmedittarget]', function () {
 
   $("body").pagecontainer("change", "#editPM");
   $("#editpm_voltage").selectmenu();
-  $("#editpm_voltage").selectmenu("refresh", true);
+  $("select#editpm_voltage").selectmenu("refresh", true);
 
 });
 $('body').on('click', 'a[pmdeletetarget]', function () {
@@ -234,8 +237,12 @@ function _buildPowermeterDisplay(element, index) {
 
 function _removePowermeterDisplay(dIO) {
   $("div[dio=" + dIO + "]").remove();
-  $("#createPMForm_dIO option[value='" + dIO + "']").removeAttr("disabled", false);
   $("#powermeterslist").collapsibleset('refresh', true);
+  $("#createPMForm_dIO option[value='" + dIO + "']").removeAttr("disabled", false);
+  if(selectPmSelectInitialized) 
+  {
+    $("select#createPMForm_dIO").selectmenu("refresh",true);
+  }
 }
 function _replacePowermeterDisplay(element, index) {
   var item = $("div[dio=" + element.dIO + "]");
@@ -252,6 +259,7 @@ function _appendNewPowermeterDisplay(element, index) {
     .attr({ 'data-role': 'collapsible', 'data-collapsed': 'true', 'dio': element.dIO })
     .html(_buildPowermeterDisplay(element));
 
+  // Sort by PM index
   var findNextItem = $("#powermeterslist").children("div[dio]").filter(
     function () {
       return dioToPmReferenceIndex[$(this).attr("dio")] > dioToPmReferenceIndex[element.dIO];
@@ -261,7 +269,9 @@ function _appendNewPowermeterDisplay(element, index) {
   else
     $("#powermeterslist").append(newItem);
 
+  // remove PM from option
   $("#createPMForm_dIO option[value='" + element.dIO + "']").prop("disabled", true);
+  if(selectPmSelectInitialized) $("select#createPMForm_dIO").selectmenu("refresh",true);
   $("#powermeterslist").collapsibleset('refresh');
 }
 const dioToPmReferenceIndex = [1, 9, 10, 8, 2, 255, 255, 255, 255, 255, 255, 255, 5, 6, 4, 7, 3];
@@ -298,10 +308,11 @@ function _downloadSettings() {
   //     console.log("get powermeters KO");
   //   }
   // });
-}
-jQuery("#landing").on("pageinit", function (event) {
+};
+$("#landing").on("pageinit", function (event) {
   _downloadSettings();
 })
+
 $(document).ready(function () {
   var wsURI = ((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/pmb/ws";
   var ws = new WebSocket(wsURI);
