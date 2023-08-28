@@ -217,7 +217,7 @@ jQuery.validator.addMethod(
   }, "erreur expression reguliere"
 );
 function _buildPowermeterDisplay(element, index) {
-  return '<h3> PM' + dioToPmReference[element.dIO] + ': <span id="name' + element.dIO + '">' + element.name + '</span><span class="ui-li-count" id="cumulative' + element.dIO + '">' + element.cumulative + '</span></h3>' +
+  return '<h3> PM' + dioToPmReferenceIndex[element.dIO] + ': <span id="name' + element.dIO + '">' + element.name + '</span><span class="ui-li-count" id="cumulative' + element.dIO + '">' + element.cumulative + '</span></h3>' +
     '<div class="ui-grid-a">' +
     '<div class="ui-block-a">tick:<span id="ticks' + element.dIO + '">' + element.ticks + '</span></div>' +
     '<div class="ui-block-b">nbTicksByKw:<span id="nbticks' + element.dIO + '">' + element.nbTickByKW + '</div>' +
@@ -234,7 +234,7 @@ function _buildPowermeterDisplay(element, index) {
 
 function _removePowermeterDisplay(dIO) {
   $("div[dio=" + dIO + "]").remove();
-  $("#createPMForm_dIO option[value='" + dioToPmReference[dIO] + "']").removeAttr("disabled", false);
+  $("#createPMForm_dIO option[value='" + dIO + "']").removeAttr("disabled", false);
   $("#powermeterslist").collapsibleset('refresh', true);
 }
 function _replacePowermeterDisplay(element, index) {
@@ -251,11 +251,22 @@ function _appendNewPowermeterDisplay(element, index) {
   var newItem = $('<div>')
     .attr({ 'data-role': 'collapsible', 'data-collapsed': 'true', 'dio': element.dIO })
     .html(_buildPowermeterDisplay(element));
-  $("#powermeterslist").append(newItem);
-  $("#createPMForm_dIO option[value='" + dioToPmReference[element.dIO] + "']").prop("disabled", true);
+
+  var findNextItem = $("#powermeterslist").children("div[dio]").filter(
+    function () {
+      return dioToPmReferenceIndex[$(this).attr("dio")] > dioToPmReferenceIndex[element.dIO];
+    });
+  if (findNextItem.length != 0)
+    $(findNextItem[0]).before(newItem);
+  else
+    $("#powermeterslist").append(newItem);
+
+  $("#createPMForm_dIO option[value='" + element.dIO + "']").prop("disabled", true);
   $("#powermeterslist").collapsibleset('refresh');
 }
-var dioToPmReference = [1, 9, 10, 8, 2, 3, 255, 255, 255, 255, 255, 255, 5, 6, 4, 7];
+const dioToPmReferenceIndex = [1, 9, 10, 8, 2, 255, 255, 255, 255, 255, 255, 255, 5, 6, 4, 7, 3];
+const pmReferenceIndexToDio = [255, /*PM1 D3*/0, /*PM2 D2*/4, /*PM3 D1*/16, /*PM4 D5*/14, /*PM5 D6*/12, /*PM6 D7*/13, /*PM7 D8*/15, /*PM8 D9*/3, /*PM9 D10*/1, /*PM10 D4*/2];
+
 
 function _downloadSettings() {
   var data = [
