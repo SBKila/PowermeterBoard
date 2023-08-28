@@ -72,6 +72,7 @@ $("#addPM").on("pagecreate", function () {
           data[pair[0]] = pair[1];
         }
         _addPMSettings(data);
+        $("#createPMForm").trigger("reset")
         $.mobile.changePage("#landing");
       }
 
@@ -130,7 +131,7 @@ $("#editPM").on("pagecreate", function () {
       for (var pair of formData.entries()) {
         data[pair[0]] = pair[1];
       }
-      data.dIO=data.dIO.substring(2);
+      data.dIO = data.dIO.substring(2);
       _updatePMSettings(data);
       $.mobile.changePage("#landing");
       // $.ajax({
@@ -182,28 +183,27 @@ $('body').on('click', 'a[pmdeletetarget]', function () {
   console.log("delete " + target);
   _removePMSettings(target);
 });
-function _uploadSettings(){
+function _uploadSettings() {
   $("#btn-upload").button('disable');
 }
 function _updatePMSettings(data) {
-  pmSettings = pmSettings.filter(element => (element.dIO===data.dIO)?data:element);
+  pmSettings = pmSettings.filter(element => (element.dIO === data.dIO) ? data : element);
   isSettingsDirty = true;
   $("#btn-upload").button('enable');
   _replacePowermeterDisplay(data);
 }
 function _addPMSettings(data) {
   pmSettings.push(data);
-  $("#btn-upload").button('enable');  
+  $("#btn-upload").button('enable');
   isSettingsDirty = true;
   _appendNewPowermeterDisplay(data);
 
 }
 function _removePMSettings(dIO) {
-  pmSettings = pmSettings.filter(element => element.dIO!=dIO);
+  pmSettings = pmSettings.filter(element => element.dIO != dIO);
   isSettingsDirty = true;
-  $("#btn-upload").button('enable');  
-  $("div[dio="+dIO+"]").remove();
-  $("#powermeterslist").collapsibleset('refresh');
+  $("#btn-upload").button('enable');
+  _removePowermeterDisplay(dIO);
 }
 
 jQuery.validator.addMethod(
@@ -218,31 +218,42 @@ jQuery.validator.addMethod(
 );
 function _buildPowermeterDisplay(element, index) {
   return '<h3> PM' + dioToPmReference[element.dIO] + ': <span id="name' + element.dIO + '">' + element.name + '</span><span class="ui-li-count" id="cumulative' + element.dIO + '">' + element.cumulative + '</span></h3>' +
-      '<div class="ui-grid-a">' +
-      '<div class="ui-block-a">tick:<span id="ticks' + element.dIO + '">' + element.ticks + '</span></div>' +
-      '<div class="ui-block-b">nbTicksByKw:<span id="nbticks' + element.dIO + '">' + element.nbTickByKW + '</div>' +
-      '</div>' +
-      '<div class="ui-grid-a">' +
-      '<div class="ui-block-a">voltage:<span id="voltage' + element.dIO + '">' + element.voltage + '</div>' +
-      '<div class="ui-block-b">maxAmp:<span id="maxamp' + element.dIO + '">' + element.maxAmp + '</div>' +
-      '</div>' +
-      '<div>' +
-      '<a href="#" pmedittarget="' + element.dIO + '" class="ui-btn ui-shadow ui-corner-all ui-icon-edit ui-btn-icon-notext ui-btn-inline">Edit</a>' +
-      '<a href="#" pmdeletetarget="' + element.dIO + '" class="ui-btn ui-shadow ui-corner-all ui-icon-delete ui-btn-icon-notext ui-btn-inline">Delete</a>' +
-      '</div>';
+    '<div class="ui-grid-a">' +
+    '<div class="ui-block-a">tick:<span id="ticks' + element.dIO + '">' + element.ticks + '</span></div>' +
+    '<div class="ui-block-b">nbTicksByKw:<span id="nbticks' + element.dIO + '">' + element.nbTickByKW + '</div>' +
+    '</div>' +
+    '<div class="ui-grid-a">' +
+    '<div class="ui-block-a">voltage:<span id="voltage' + element.dIO + '">' + element.voltage + '</div>' +
+    '<div class="ui-block-b">maxAmp:<span id="maxamp' + element.dIO + '">' + element.maxAmp + '</div>' +
+    '</div>' +
+    '<div>' +
+    '<a href="#" pmedittarget="' + element.dIO + '" class="ui-btn ui-shadow ui-corner-all ui-icon-edit ui-btn-icon-notext ui-btn-inline">Edit</a>' +
+    '<a href="#" pmdeletetarget="' + element.dIO + '" class="ui-btn ui-shadow ui-corner-all ui-icon-delete ui-btn-icon-notext ui-btn-inline">Delete</a>' +
+    '</div>';
 }
 
+function _removePowermeterDisplay(dIO) {
+  $("div[dio=" + dIO + "]").remove();
+  $("#createPMForm_dIO option[value='" + dioToPmReference[dIO] + "']").removeAttr("disabled", false);
+  $("#powermeterslist").collapsibleset('refresh', true);
+}
 function _replacePowermeterDisplay(element, index) {
-  $("div[dio="+element.dIO+"]").html(_buildPowermeterDisplay(element));
-    $("#powermeterslist").collapsibleset('refresh',true);
+  var item = $("div[dio=" + element.dIO + "]");
+  var newItem = $('<div>')
+    .attr({ 'data-role': 'collapsible', 'data-collapsed': 'true', 'dio': element.dIO })
+    .html(_buildPowermeterDisplay(element));
+  //$("div[dio=" + element.dIO + "]").html(_buildPowermeterDisplay(element));
+  item.after(newItem);
+  item.remove();
+  $("#powermeterslist").collapsibleset('refresh');
 }
 function _appendNewPowermeterDisplay(element, index) {
   var newItem = $('<div>')
-  .attr({ 'data-role': 'collapsible', 'data-collapsed': 'true', 'dio':element.dIO})
-  .html(_buildPowermeterDisplay(element));
+    .attr({ 'data-role': 'collapsible', 'data-collapsed': 'true', 'dio': element.dIO })
+    .html(_buildPowermeterDisplay(element));
   $("#powermeterslist").append(newItem);
   $("#createPMForm_dIO option[value='" + dioToPmReference[element.dIO] + "']").prop("disabled", true);
-    $("#powermeterslist").collapsibleset('refresh');
+  $("#powermeterslist").collapsibleset('refresh');
 }
 var dioToPmReference = [1, 9, 10, 8, 2, 3, 255, 255, 255, 255, 255, 255, 5, 6, 4, 7];
 
@@ -252,9 +263,9 @@ function _downloadSettings() {
     { "dIO": "2", "name": "Garage", "nbTickByKW": "1000", "voltage": "240", "maxAmp": "16", "cumulative": "7542", "ticks": "120" }
   ];
   console.log("get powermeters ok");
-  
-  $("#btn-upload").button('disable');  
-  
+
+  $("#btn-upload").button('disable');
+
   isSettingsDirty = false;
   pmSettings = data;
   $("#powermeterslist").empty();
@@ -265,11 +276,11 @@ function _downloadSettings() {
   //   url: "./pm",
   //   success: function (data, textStatus, jqXHR) {
   //     //process data
-         // isSettingsDirty = false;
-         // pmSettings = data;
-         // $("#powermeterslist").empty();
-         // data.forEach(appendNewPowermeter);
-         // $("#powermeterslist").collapsibleset('refresh');
+  // isSettingsDirty = false;
+  // pmSettings = data;
+  // $("#powermeterslist").empty();
+  // data.forEach(appendNewPowermeter);
+  // $("#powermeterslist").collapsibleset('refresh');
   //   },
   //   error: function (data, textStatus, jqXHR) {
   //     //process error msg
@@ -277,9 +288,9 @@ function _downloadSettings() {
   //   }
   // });
 }
-jQuery( "#landing" ).on( "pageinit", function( event ) { 
+jQuery("#landing").on("pageinit", function (event) {
   _downloadSettings();
-} )
+})
 $(document).ready(function () {
   var wsURI = ((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/pmb/ws";
   var ws = new WebSocket(wsURI);
