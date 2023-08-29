@@ -5,25 +5,7 @@
 	<title>PowerMeter</title>
 
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-
 	<link rel="stylesheet" href="./powermeter.css">
-	<link rel="apple-touch-icon" sizes="57x57" href="./apple-icon-57.png">
-	<link rel="apple-touch-icon" sizes="60x60" href="./apple-icon-60.png">
-	<link rel="apple-touch-icon" sizes="72x72" href="./apple-icon-72.png">
-	<link rel="apple-touch-icon" sizes="76x76" href="./apple-icon-76.png">
-	<link rel="apple-touch-icon" sizes="114x114" href="./apple-icon-114.png">
-	<link rel="apple-touch-icon" sizes="120x120" href="./apple-icon-120.png">
-	<link rel="apple-touch-icon" sizes="144x144" href="./apple-icon-144.png">
-	<link rel="apple-touch-icon" sizes="152x152" href="./apple-icon-152.png">
-	<link rel="apple-touch-icon" sizes="180x180" href="./apple-icon-180.png">
-	<link rel="icon" type="image/png" sizes="192x192" href="./android-icon-192.png">
-	<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
-	<link rel="icon" type="image/png" sizes="96x96" href="./favicon-96.png">
-	<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png">
-	<link rel="manifest" href="./manifest.json">
-	<meta name="msapplication-TileColor" content="#ffffff">
-	<meta name="msapplication-TileImage" content="./ms-icon-144.png">
-	<meta name="theme-color" content="#ffffff">
 	<link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
 	<script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
@@ -31,29 +13,45 @@
 </head>
 
 <body>
-
 	<div data-role="page" id="landing">
-
 		<div data-role="header">
 			<h1>Power Meter Overview</h1>
 		</div><!-- /header -->
-
 		<div role="main" class="ui-content">
 			<div data-role="header">
 				<h1>Home assistant</h1>
 			</div>
 			<div class="ui-nodisc-icon">
-				<p>Device name:`NODENAME`</p>
+				<form>
+					<div class="ui-field-contain">
+						<label for="nodename">Device name:</label>
+						<input type="text" name="text-1" id="nodename" value="`NODENAME`" disabled="disabled">
+					</div>
+				</form>
 			</div>
 			<div data-role="header">
 				<h1>MQTT server</h1>
 				<a data-icon="gear" class="ui-btn-right" data-iconpos="notext" href="#setMQTT"></a>
 			</div>
 			<div class="ui-nodisc-icon">
-				<p>MQTT Server:mqtt://`MQTTDOMAIN`:`MQTTPORT`</p>
-				<p>Login:`MQTTLOGIN`</p>
-				<p>Password:`MQTTPWD`</p>
-				<p>Status:<span id="HA_status">`MQTTCONNECTIONSTATUS`</span></p>
+				<form>
+					<div class="ui-field-contain">
+						<label for="mqtturl">MQTT Server:</label>
+						<input type="text" name="text-1" id="mqtturl" value="mqtt://`MQTTDOMAIN`:`MQTTPORT`" disabled="disabled">
+					</div>
+					<div class="ui-field-contain">
+						<label for="mqttlogin">Login:</label>
+						<input type="text" name="text-1" id="mqttlogin" value="`MQTTLOGIN`" disabled="disabled">
+					</div>
+					<div class="ui-field-contain">
+						<label for="mqttpwd">Password:</label>
+						<input type="text" name="text-1" id="mqttpwd" value="`MQTTPWD`" disabled="disabled">
+					</div>
+					<div class="ui-field-contain">
+						<label for="mqttstatus">Status:</label>
+						<input type="text" name="text-1" id="mqttstatus" value="``MQTTCONNECTIONSTATUS``" disabled="disabled">
+					</div>
+				</form>
 			</div>
 		</div>
 
@@ -67,11 +65,11 @@
 		</div>
 		<div role="main" class="ui-content">
 			<div class="ui-grid-a ui-responsive">
-				<div class="ui-block-a"><input id="btn-reload" type="button" data-icon="recycle" value="Reload" data-iconpos="bottom"></div>
-				<div class="ui-block-b"><input id="btn-upload" type="button" data-icon="action" value="Upload" data-iconpos="bottom" disabled></div>
-
+				<div class="ui-block-a"><input id="btn-reload" type="button" data-icon="recycle" value="Reload"
+						data-iconpos="bottom"></div>
+				<div class="ui-block-b"><input id="btn-upload" type="button" data-icon="action" value="Upload"
+						data-iconpos="bottom" disabled></div>
 			</div>
-
 		</div>
 		<div id="footer" data-role="footer">
 			<img class="logo" src="./KPLogo.svg">
@@ -128,7 +126,7 @@
 				<input type="text" name="name" value="" id="createPMForm_name">
 				<label for="createPMForm_nbTickByKW">Impuls by kW:</label>
 				<input type="number" name="nbTickByKW" value="" id="createPMForm_nbTickByKW">
-				
+
 				<label for="createPMForm_voltage">Nominal voltage:</label>
 				<select name="voltage" id="createPMForm_voltage" data-native-menu="false">
 					<option value="">Power suply voltage:</option>
