@@ -179,12 +179,12 @@ $("#btn-upload").on("click", () => {
 $('body').on('click', 'a[pmedittarget]', function () {
   var pm = $(this).attr("pmedittarget");
   $("#editpm_ref").val("PM" + pm);
-  $("#editpm_name").val($("#name" + pm).val());
+  $("#editpm_name").val($("#name" + pm).text());
   $("#editpm_ticks").val($("#ticks" + pm).val());
   $("#editpm_nbtick").val($("#nbticks" + pm).val());
   $("#editpm_voltage")[0].selectedIndex = $("#editpm_voltage option[value=" + $("#voltage" + pm).val() + "]").index();
   $("#editpm_maxamp").val($("#maxamp" + pm).val());
-  $("#editpm_cumulative").val($("#cumulative" + pm).val());
+  $("#editpm_value").val($("#cumulative" + pm).text());
 
   $("body").pagecontainer("change", "#editPM");
   //$("#editpm_voltage").selectmenu();
@@ -236,13 +236,13 @@ function _buildPowermeterDisplay(element, index) {
     '<div class="ui-block-a">'+
     '<div class="ui-field-contain">'+
 		'<label>tick:</label>'+
-		'<input type="text" id="ticks' + element.dIO + '" value="' + element.ticks + '" disabled="disabled">'+
+		'<input type="text" id="ticks' + element.dIO + '" value="' + element.ticks + '" disabled="disabled" data-mini="true" >'+
 		'</div>'+
     '</div>'+
     '<div class="ui-block-b">'+
     '<div class="ui-field-contain">'+
 		'<label>nbTicksByKw:</label>'+
-		'<input type="text" id="nbticks' + element.dIO + '" value="' + element.nbTickByKW + '" disabled="disabled">'+
+		'<input type="text" id="nbticks' + element.dIO + '" value="' + element.nbTickByKW + '" disabled="disabled" data-mini="true" >'+
 		'</div>'+
     '</div>'+
     '</div>' +
@@ -250,13 +250,13 @@ function _buildPowermeterDisplay(element, index) {
     '<div class="ui-block-a">'+
     '<div class="ui-field-contain">'+
 		'<label>voltage:</label>'+
-		'<input type="text" id="voltage' + element.dIO + '" value="' + element.voltage + '" disabled="disabled">'+
+		'<input type="text" id="voltage' + element.dIO + '" value="' + element.voltage + '" disabled="disabled" data-mini="true" >'+
 		'</div>'+
     '</div>'+
     '<div class="ui-block-b">'+
     '<div class="ui-field-contain">'+
 		'<label>maxAmp</label>'+
-		'<input type="text" id="nbticks' + element.dIO + '" value="' + element.maxAmp + '" disabled="disabled">'+
+		'<input type="text" id="maxamp' + element.dIO + '" value="' + element.maxAmp + '" disabled="disabled" data-mini="true" >'+
 		'</div>'+
     '</div>'+
     '</div>' +

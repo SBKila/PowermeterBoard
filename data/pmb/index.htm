@@ -37,7 +37,8 @@
 				<form>
 					<div class="ui-field-contain">
 						<label for="mqtturl">MQTT Server:</label>
-						<input type="text" name="text-1" id="mqtturl" value="mqtt://`MQTTDOMAIN`:`MQTTPORT`" disabled="disabled">
+						<input type="text" name="text-1" id="mqtturl" value="mqtt://`MQTTDOMAIN`:`MQTTPORT`"
+							disabled="disabled">
 					</div>
 					<div class="ui-field-contain">
 						<label for="mqttlogin">Login:</label>
@@ -49,7 +50,8 @@
 					</div>
 					<div class="ui-field-contain">
 						<label for="mqttstatus">Status:</label>
-						<input type="text" name="text-1" id="mqttstatus" value="``MQTTCONNECTIONSTATUS``" disabled="disabled">
+						<input type="text" name="text-1" id="mqttstatus" value="``MQTTCONNECTIONSTATUS``"
+							disabled="disabled">
 					</div>
 				</form>
 			</div>
@@ -154,25 +156,37 @@
 		</div><!-- /header -->
 		<div role="main" class="ui-content">
 			<form id="editPMForm">
-				<label for="editpm_ref">Reference:</label>
-				<input readonly type="text" name="dIO" value="" id="editpm_ref">
-				<label for="editpm_name">Name:</label>
-				<input readonly type="text" name="name" value="" id="editpm_name">
-				<label for="editpm_nbtick">Impuls by kW:</label>
-				<input type number name="nbTickByKW" id="editpm_nbtick" value="">
-				<label for="editpm_voltage">Nominal voltage:</label>
-				<select name="voltage" id="editpm_voltage" data-native-menu="false">
-					<option value="">Power suply voltage:</option>
-					<option value="230">230</option>
-					<option value="220">220</option>
-					<option value="240">240</option>
-					<option value="110">110</option>
-					<option value="120">120</option>
-				</select>
-				<label for="editpm_maxamp">Max amp:</label>
-				<input name="maxAmp" id="editpm_maxamp" pattern="[0-9]*" value="">
-				<label for="editpm_value">Current value:</label>
-				<input name="cumulative" id="editpm_value" pattern="[0-9]*" value="0">
+				<div class="ui-field-contain">
+					<label for="editpm_ref">Reference:</label>
+					<input readonly type="text" name="dIO" value="" id="editpm_ref">
+				</div>
+				<div class="ui-field-contain">
+					<label for="editpm_name">Name:</label>
+					<input readonly type="text" name="name" value="" id="editpm_name">
+				</div>
+				<div class="ui-field-contain">
+					<label for="editpm_nbtick">Impuls by kW:</label>
+					<input type="number" name="nbTickByKW" id="editpm_nbtick" value="">
+				</div>
+				<div class="ui-field-contain">
+					<label for="editpm_voltage">Nominal voltage:</label>
+					<select name="voltage" id="editpm_voltage" data-native-menu="false">
+						<option value="">Power suply voltage:</option>
+						<option value="230">230</option>
+						<option value="220">220</option>
+						<option value="240">240</option>
+						<option value="110">110</option>
+						<option value="120">120</option>
+					</select>
+				</div>
+				<div class="ui-field-contain">
+					<label for="editpm_maxamp">Max amp:</label>
+					<input name="maxAmp" id="editpm_maxamp" pattern="[0-9]*" value="">
+				</div>
+				<div class="ui-field-contain">
+					<label for="editpm_value">Current value:</label>
+					<input name="cumulative" id="editpm_value" pattern="[0-9]*" value="0">
+				</div>
 				<input data-role="submit" type="submit" value="Update" class="ui-btn ui-corner-all">
 				<a href="#" class="ui-btn ui-corner-all" data-rel="back">Cancel</a>
 			</form>
