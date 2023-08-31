@@ -1,10 +1,9 @@
-#footer 
-{
+#footer {
     height: 35px;
     padding: 5px;
 }
-#footer .logo 
-{
+
+#footer .logo {
     height: 100%;
     display: block;
     margin: auto;
@@ -18,4 +17,9 @@ label.error {
     margin-top: 0.5em;
     width: 100%;
     float: none;
+}
+
+.button-wrap {
+    margin-left: 5px;
+    margin-right: 5px;
 }

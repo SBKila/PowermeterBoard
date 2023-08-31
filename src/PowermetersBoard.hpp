@@ -225,6 +225,7 @@ public:
                 PWBOARD_DEBUG_MSG("websocket client connected\n");
                 _broadcastPowerMeterInfo(255, client);
                 _broadcastMQTTConnectionStatus(client);
+                _broadcastWIFIStatus(client);
             }
             else if (type == WS_EVT_DISCONNECT)
             {
@@ -558,6 +559,24 @@ private:
 
         _broadcastEvent("msc", mqttStatusEvent, client);
     }
+    void _broadcastWIFIStatus(AsyncWebSocketClient *client){
+         // allocate the memory for the document
+        const size_t CAPACITY = JSON_OBJECT_SIZE(1);
+        DynamicJsonDocument doc(256);
+        
+
+        // create a variant
+        JsonObject wifiInfoEvent = doc.to<JsonObject>();
+        wifiInfoEvent["ssid"]=WiFi.SSID();
+        wifiInfoEvent["rssi"]=WiFi.RSSI();
+        wifiInfoEvent["bssid"]=WiFi.BSSIDstr();
+        wifiInfoEvent["channel"]=String(WiFi.channel());
+        wifiInfoEvent["ip"]=WiFi.localIP().toString();
+        wifiInfoEvent["host"]=WiFi.hostname();
+        wifiInfoEvent["status"]=String(WiFi.status());
+        _broadcastEvent("wsc", wifiInfoEvent, client);
+
+    }
     void _broadcastEvent(const char *eventType, const JsonArray &eventDatas, AsyncWebSocketClient *client)
     {
         PWBOARD_DEBUG_MSG("_broadcastEvent array %s to %s\n", eventType, (NULL == client) ? "ALL" : "client");
@@ -604,9 +623,9 @@ private:
     {
         PWBOARD_DEBUG_MSG("_broadcastEvent document %s to %s\n", eventType, (NULL == client) ? "ALL" : "client");
         String response;
-        const size_t CAPACITY = JSON_OBJECT_SIZE(3);
+        // const size_t CAPACITY = JSON_OBJECT_SIZE(3);
 
-        DynamicJsonDocument doc(CAPACITY);
+        DynamicJsonDocument doc(1024);
         doc["type"] = eventType;
         doc["datas"] = eventDatas;
 

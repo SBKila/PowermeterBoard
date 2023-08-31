@@ -21,19 +21,69 @@
 			<div data-role="header">
 				<h1>Home assistant</h1>
 			</div>
-			<div class="ui-nodisc-icon">
+			<div data-role="main" class="ui-content">
 				<form>
 					<div class="ui-field-contain">
 						<label for="nodename">Device name:</label>
-						<input type="text" name="text-1" id="nodename" value="`NODENAME`" disabled="disabled">
+						<input type="text" id="nodename" value="`NODENAME`" disabled="disabled">
 					</div>
 				</form>
 			</div>
 			<div data-role="header">
-				<h1>MQTT server</h1>
+				<h2>Wifi</h2>
+				<a data-icon="carat-d" class="ui-btn-right" data-iconpos="notext" id="wifiexpbtn"></a>
+			</div>
+			<div data-role="main" class="ui-content">
+				<form id="wifipanel" style="display: none">
+					<div class="ui-grid-a">
+						<div class="ui-block-a">
+							<div class="ui-field-contain">
+								<label for="ssid">SSID:</label>
+								<input type="text" id="ssid" value="" disabled="disabled">
+							</div>
+						</div>
+						<div class="ui-block-b">
+							<div class="ui-field-contain">
+								<label for="channel">channel:</label>
+								<input type="text" id="channel" value="" disabled="disabled">
+							</div>
+						</div>
+					</div>
+					<div class="ui-grid-a">
+						<div class="ui-block-a">
+							<div class="ui-field-contain">
+								<label for="rssi">strength:</label>
+								<input type="text" id="rssi" value="" disabled="disabled">
+							</div>
+						</div>
+						<div class="ui-block-b">
+							<div class="ui-field-contain">
+								<label for="status">status:</label>
+								<input type="text" id="status" value="" disabled="disabled">
+							</div>
+						</div>
+					</div>
+					<div class="ui-grid-a">
+						<div class="ui-block-a">
+							<div class="ui-field-contain">
+								<label for="ip">Ip:</label>
+								<input type="text" id="ip" value="" disabled="disabled">
+							</div>
+						</div>
+						<div class="ui-block-b">
+							<div class="ui-field-contain">
+								<label for="host">host:</label>
+								<input type="text" id="host" value="" disabled="disabled">
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div data-role="header">
+				<h2>MQTT server</h2>
 				<a data-icon="gear" class="ui-btn-right" data-iconpos="notext" href="#setMQTT"></a>
 			</div>
-			<div class="ui-nodisc-icon">
+			<div data-role="main" class="ui-content">
 				<form>
 					<div class="ui-field-contain">
 						<label for="mqtturl">MQTT Server:</label>
@@ -55,17 +105,12 @@
 					</div>
 				</form>
 			</div>
-		</div>
-
-		<div role="main" class="ui-content">
 			<div data-role="header">
-				<h1>Powereters</h1>
+				<h2>Powereters</h2>
 				<a href="#addPM" data-icon="plus" class="ui-btn-right" data-iconpos="notext">add</a>
 			</div>
 			<div data-role="collapsible-set" data-theme="c" data-content-theme="d" id='powermeterslist'>
 			</div>
-		</div>
-		<div role="main" class="ui-content">
 			<div class="ui-grid-a ui-responsive">
 				<div class="ui-block-a"><input id="btn-reload" type="button" data-icon="recycle" value="Reload"
 						data-iconpos="bottom"></div>
@@ -187,8 +232,8 @@
 					<label for="editpm_value">Current value:</label>
 					<input name="cumulative" id="editpm_value" pattern="[0-9]*" value="0">
 				</div>
-				<input data-role="submit" type="submit" value="Update" class="ui-btn ui-corner-all">
-				<a href="#" class="ui-btn ui-corner-all" data-rel="back">Cancel</a>
+				<input data-mini="true" data-role="submit" type="submit" value="Update" class="ui-btn ui-corner-all">
+				<a href="#" class="ui-btn ui-corner-all ui-mini" data-rel="back">Cancel</a>
 			</form>
 		</div>
 		<div id="footer" data-role="footer">

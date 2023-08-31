@@ -187,7 +187,6 @@ $('body').on('click', 'a[pmedittarget]', function () {
   $("#editpm_value").val($("#cumulative" + pm).text());
 
   $("body").pagecontainer("change", "#editPM");
-  //$("#editpm_voltage").selectmenu();
   $("select#editpm_voltage").selectmenu("refresh", true);
 
 });
@@ -195,6 +194,10 @@ $('body').on('click', 'a[pmdeletetarget]', function () {
   var target = $(this).attr("pmdeletetarget");
   console.log("delete " + target);
   _removePMSettings(target);
+});
+$("#wifiexpbtn").on("click",()=>{
+  $('#wifiexpbtn').buttonMarkup({ icon: "carat-"+($('#wifipanel').is(":visible")?"d":"u") });
+  $('#wifipanel').toggle();
 });
 function _uploadSettings() {
   $("#btn-upload").button('disable');
@@ -324,22 +327,6 @@ function _downloadSettings() {
   $("#powermeterslist").empty();
   data.forEach(_appendNewPowermeterDisplay);
   $("#powermeterslist").collapsibleset('refresh');
-  // $.ajax({
-  //   type: "GET",
-  //   url: "./pm",
-  //   success: function (data, textStatus, jqXHR) {
-  //     //process data
-  // isSettingsDirty = false;
-  // pmSettings = data;
-  // $("#powermeterslist").empty();
-  // data.forEach(appendNewPowermeter);
-  // $("#powermeterslist").collapsibleset('refresh');
-  //   },
-  //   error: function (data, textStatus, jqXHR) {
-  //     //process error msg
-  //     console.log("get powermeters KO");
-  //   }
-  // });
 };
 $("#landing").on("pageinit", function (event) {
   _downloadSettings();
@@ -350,9 +337,8 @@ $(document).ready(function () {
   var ws = new WebSocket(wsURI);
   ws.onopen = function (evt) { console.log("WS:Connection open ..."); };
   ws.onmessage = function (evt) {
-    //var pmdEvent = JSON.parse(evt.data);
-    var pmdEvent = evt;
-    console.log("WS:Received Message: " + pmdEvent.type);
+    var pmdEvent = JSON.parse(evt.data);
+    console.log("WS:Received Message: " + evt.data);
     if (pmdEvent.type === "pdu") {
       pmdEvent.datas.forEach(function (element) {
         $("#cumulative" + element.dIO).html(element.cumulative);
@@ -362,9 +348,19 @@ $(document).ready(function () {
     // MQTT connection status
     if (pmdEvent.type === "msc") {
       $("#mqttstatus").val(pmdEvent.datas ? "connected" : "disconnected");
-
+    }
+    if (pmdEvent.type === "wsc") {
+      if(pmdEvent.datas.ssid) $("#ssid").val(pmdEvent.datas.ssid);
+      if(pmdEvent.datas.ip) $("#ip").val(pmdEvent.datas.ip);
+      if(pmdEvent.datas.rssi) $("#rssi").val(pmdEvent.datas.rssi);
+      if(pmdEvent.datas.host) $("#host").val(pmdEvent.datas.host);
+      if(pmdEvent.datas.bssid) $("#bssid").val(pmdEvent.datas.bssid);
+      if(pmdEvent.datas.channel) $("#channel").val(pmdEvent.datas.channel);
+      if(pmdEvent.datas.status) $("#status").val(wifiStatusToString[pmdEvent.datas.status]);
     }
   };
+  const wifiStatusToString=["NO BOARD","IDLE","NO SSID AVAIL","SCAN COMPLETED","CONNECTED","CONNECT FAILED","CONNECTION LOST","WRONG PASSWORD","DISCONNECTED"];
+
   ws.onclose = function (evt) { console.log("WS:Connection closed."); };
   ws.onerror = function (evt) { console.log("WS:WebSocket error : " + evt.data) };
 });

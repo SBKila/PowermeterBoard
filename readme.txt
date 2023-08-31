@@ -13,7 +13,8 @@ Next: Add Edit PowerMeter Settings
 21/08/23 Correctly manage Update cumulative VS Full AdapterDDS238
 Think about moving adapter to PMBoard project => it is not HA lib
 27/08/23 Change UI for save all and reboot (PM part).
-28/08/23 Fix UI add remove PM issues ==> disable item in menu list PM reference  
+28/08/23 Fix UI add remove PM issues ==> disable item in menu list PM reference
+30/08/23 add wifi info in UI
 
 
 @todo
