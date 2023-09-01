@@ -30,7 +30,7 @@
 
 
 AsyncWebSocket ws("/pmb/ws");          // access at ws://[esp ip]/pmb/ws
-AsyncEventSource events("pmb/events"); // event source (Server-Sent events)
+//AsyncEventSource events("pmb/events"); // event source (Server-Sent events)
 
 struct PowermeterBoardSettings
 {
@@ -196,26 +196,6 @@ public:
 
         m_pPowerMeterDevice = new HALIB_NAMESPACE::HADevice(deviceName, "Kila Product", "PowerMeter", "v 0.1");
 
-        // Route for root / web page
-        // p_pWiFiServer->on(
-        //     "/pmb/index.htm",
-        //     HTTP_GET,
-        //     [this, &fs](AsyncWebServerRequest *request)
-        //     {
-        //         PWBOARD_DEBUG_MSG("GET /pmb\n");
-        //         // FS fs = this->getFileSystem();
-        //         //(FS &fs, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback)
-        //         request->send(
-        //             SPIFFS,
-        //             // fs,
-        //             "/pmb/index.htm",
-        //             "text/html; charset=utf-8",
-        //             false
-        //             /*,[this](const String &var) -> String { return this->stringProcessor(var); }*/);
-        //     });
-
-
-        
         // attach AsyncWebSocket
         ws.onEvent([this](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
                    {
@@ -234,9 +214,12 @@ public:
         p_pWebServer->addHandler(&ws);
 
         // attach AsyncEventSource
-        p_pWebServer->addHandler(&events);
-        p_pWebServer->serveStatic("/pmb", fs, "/pmb").setTemplateProcessor([this](const String &var) -> String
-                                                                           { return this->stringProcessor(var); });
+        // p_pWebServer->addHandler(&events);
+
+        p_pWebServer->serveStatic("/pmb/", fs, "/pmb/")
+            .setTemplateProcessor([this](const String &var) -> String{ return this->stringProcessor(var); })
+            .setDefaultFile("index.htm");
+        
         restore();
 
         if((strlen(m_PowermeterBoardSettings.node_name) != 0) && ( 0 != strcmp(m_PowermeterBoardSettings.node_name, deviceName))){
@@ -512,7 +495,6 @@ private:
 
         _broadcastEvent("pi", root, client);
     }
-
     void _broadcastPowerMeterData(uint8 index, AsyncWebSocketClient *client)
     {
         PWBOARD_DEBUG_MSG("_broadcastPowerMeterData %d to %s\n", index, (NULL == client) ? "ALL" : "client");
@@ -552,7 +534,6 @@ private:
         }
         _broadcastEvent("pdu", root, client);
     }
-
     void _broadcastMQTTConnectionStatus(AsyncWebSocketClient *client)
     {
         // allocate the memory for the document
