@@ -195,9 +195,14 @@ $('body').on('click', 'a[pmdeletetarget]', function () {
   console.log("delete " + target);
   _removePMSettings(target);
 });
-$("#wifiexpbtn").on("click",()=>{
-  $('#wifiexpbtn').buttonMarkup({ icon: "carat-"+($('#wifipanel').is(":visible")?"d":"u") });
+
+$("#btn-wifi").on("click",()=>{
+  $('#btn-wifi').buttonMarkup({ icon: "carat-"+($('#wifipanel').is(":visible")?"d":"u") });
   $('#wifipanel').toggle();
+});
+$("#btn-mqtt").on("click",()=>{
+  $('#btn-mqtt').buttonMarkup({ icon: "carat-"+($('#mqttpanel').is(":visible")?"d":"u") });
+  $('#mqttpanel').toggle();
 });
 function _uploadSettings() {
   $("#btn-upload").button('disable');
@@ -291,7 +296,7 @@ function _replacePowermeterDisplay(element, index) {
 }
 function _appendNewPowermeterDisplay(element, index) {
   var newItem = $('<div>')
-    .attr({ 'data-role': 'collapsible', 'data-collapsed': 'true', 'dio': element.dIO })
+    .attr({ 'data-role': 'collapsible', 'data-collapsed': 'true', 'dio': element.dIO, 'data-collapsed-icon':'carat-d', 'data-expanded-icon':'carat-u'})
     .html(_buildPowermeterDisplay(element));
 
   // Sort by PM index
@@ -344,22 +349,35 @@ $(document).ready(function () {
         $("#cumulative" + element.dIO).html(element.cumulative);
         $("#ticks" + element.dIO).html(element.ticks);
       })
+      return;
     }
     // MQTT connection status
-    if (pmdEvent.type === "msc") {
-      $("#mqttstatus").val(pmdEvent.datas ? "connected" : "disconnected");
+    if (pmdEvent.type === "mcs") {
+      $("#mqttstatus").val(pmdEvent.datas ? "Connected" : "Disconnected");
+      $("#mqttsumup").html(pmdEvent.datas ? "Connected" : "Disconnected");
+      return;
     }
-    if (pmdEvent.type === "wsc") {
+    // MQTT connection status
+    if (pmdEvent.type === "ws") {
+      $("#status").val(wifiStatusToString[pmdEvent.datas]);
+      $("#wifisumup").html(wifiStatusToString[pmdEvent.datas]);
+      return;
+    }
+    if (pmdEvent.type === "wc") {
       if(pmdEvent.datas.ssid) $("#ssid").val(pmdEvent.datas.ssid);
       if(pmdEvent.datas.ip) $("#ip").val(pmdEvent.datas.ip);
       if(pmdEvent.datas.rssi) $("#rssi").val(pmdEvent.datas.rssi);
       if(pmdEvent.datas.host) $("#host").val(pmdEvent.datas.host);
       if(pmdEvent.datas.bssid) $("#bssid").val(pmdEvent.datas.bssid);
       if(pmdEvent.datas.channel) $("#channel").val(pmdEvent.datas.channel);
-      if(pmdEvent.datas.status) $("#status").val(wifiStatusToString[pmdEvent.datas.status]);
+      if(pmdEvent.datas.status) {
+        $("#status").val(wifiStatusToString[pmdEvent.datas.status]);
+        $("#wifisumup").html(wifiStatusToString[pmdEvent.datas.status]);
+      }
+      return;
     }
   };
-  const wifiStatusToString=["NO BOARD","IDLE","NO SSID AVAIL","SCAN COMPLETED","CONNECTED","CONNECT FAILED","CONNECTION LOST","WRONG PASSWORD","DISCONNECTED"];
+  const wifiStatusToString=["Idle","No ssid avail","Scan completed","Connected","Connect failed","Connection lost","Wrong password","Disconnected"];
 
   ws.onclose = function (evt) { console.log("WS:Connection closed."); };
   ws.onerror = function (evt) { console.log("WS:WebSocket error : " + evt.data) };

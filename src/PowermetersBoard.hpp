@@ -225,7 +225,7 @@ public:
                 PWBOARD_DEBUG_MSG("websocket client connected\n");
                 _broadcastPowerMeterInfo(255, client);
                 _broadcastMQTTConnectionStatus(client);
-                _broadcastWIFIStatus(client);
+                _broadcastWIFIConfig(client);
             }
             else if (type == WS_EVT_DISCONNECT)
             {
@@ -321,10 +321,14 @@ public:
                 m_Powermeters[index]->loop();
             }
         }
-        if (isPersistanceDirty)
+        if (isPersistanceDirty) 
         {
             backup();
             isPersistanceDirty = false;
+        }
+        if(lastWifiStatus!=WiFi.status()){
+            lastWifiStatus = WiFi.status();
+            _broadcastWIFIStatus(NULL);
         }
         
         if(m_pPowerMeterDevice){
@@ -557,13 +561,20 @@ private:
         JsonVariant mqttStatusEvent = doc.to<JsonVariant>();
         mqttStatusEvent.set(isMqttconnected);
 
-        _broadcastEvent("msc", mqttStatusEvent, client);
+        _broadcastEvent("mcs", mqttStatusEvent, client);
     }
     void _broadcastWIFIStatus(AsyncWebSocketClient *client){
+                // allocate the memory for the document
+        DynamicJsonDocument doc(10);
+        // create a variant
+        JsonVariant statusEvent = doc.to<JsonVariant>();
+        statusEvent.set(WiFi.status());
+        _broadcastEvent("ws", statusEvent, client);
+    }
+    void _broadcastWIFIConfig(AsyncWebSocketClient *client){
          // allocate the memory for the document
         const size_t CAPACITY = JSON_OBJECT_SIZE(1);
         DynamicJsonDocument doc(256);
-        
 
         // create a variant
         JsonObject wifiInfoEvent = doc.to<JsonObject>();
@@ -574,7 +585,7 @@ private:
         wifiInfoEvent["ip"]=WiFi.localIP().toString();
         wifiInfoEvent["host"]=WiFi.hostname();
         wifiInfoEvent["status"]=String(WiFi.status());
-        _broadcastEvent("wsc", wifiInfoEvent, client);
+        _broadcastEvent("wc", wifiInfoEvent, client);
 
     }
     void _broadcastEvent(const char *eventType, const JsonArray &eventDatas, AsyncWebSocketClient *client)
@@ -654,6 +665,7 @@ private:
     Powermeter *m_Powermeters[10];
     DDS238Data m_PowermeterDatasPersistance[10];
     // FS &m_FileSystem;
+    uint8_t lastWifiStatus=0;
 
     int m_TagPersistanceIndex;
     int m_SettingsPersistanceIndex;

@@ -19,7 +19,11 @@ label.error {
     float: none;
 }
 
-.button-wrap {
-    margin-left: 5px;
-    margin-right: 5px;
+.sumup {
+    text-align: right;
+    font-style: italic;
+    font-weight: lighter;
+    font-size: small;
+    float: right;
+    margin-right: 4em;
 }

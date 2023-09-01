@@ -30,8 +30,9 @@
 				</form>
 			</div>
 			<div data-role="header">
+				<span id="wifisumup" class="sumup ui-left"></span>
 				<h2>Wifi</h2>
-				<a data-icon="carat-d" class="ui-btn-right" data-iconpos="notext" id="wifiexpbtn"></a>
+				<a data-icon="carat-d" class="ui-btn-left" data-iconpos="notext" id="btn-wifi"></a>
 			</div>
 			<div data-role="main" class="ui-content">
 				<form id="wifipanel" style="display: none">
@@ -80,11 +81,13 @@
 				</form>
 			</div>
 			<div data-role="header">
+				<span id="mqttsumup" class="sumup"></span>
 				<h2>MQTT server</h2>
+				<a data-icon="carat-d" class="ui-btn-left" data-iconpos="notext" id="btn-mqtt"></a>
 				<a data-icon="gear" class="ui-btn-right" data-iconpos="notext" href="#setMQTT"></a>
 			</div>
 			<div data-role="main" class="ui-content">
-				<form>
+				<form id="mqttpanel" style="display: none">
 					<div class="ui-field-contain">
 						<label for="mqtturl">MQTT Server:</label>
 						<input type="text" name="text-1" id="mqtturl" value="mqtt://`MQTTDOMAIN`:`MQTTPORT`"
