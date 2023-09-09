@@ -177,19 +177,18 @@ public:
                 boolean atleastone = false;
                 for (int i = 0; i < 10; i++)
                 {
-                    PWBOARD_DEBUG_MSG("list %d\n", m_Powermeters[i]);
                     Powermeter *pPowerMeter = this->m_Powermeters[i];
-
+                    
+                    PWBOARD_DEBUG_MSG("(%d,%d),",i,(NULL != pPowerMeter)?pPowerMeter->getDefinition().dIO:-1);
                     if (NULL != pPowerMeter)
                     {
-                        PWBOARD_DEBUG_MSG("Found\n");
                         atleastone = true;
-
                         JsonObject obj = doc.createNestedObject();
                         _fillDefinitionToJson(pPowerMeter->getDefinition(), obj);
                         _fillPMDatatoJson(pPowerMeter->getDefinition().dIO, obj);
                     }
                 }
+                PWBOARD_DEBUG_MSG("\n");
 
                 if (atleastone)
                 {
