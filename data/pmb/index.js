@@ -1,13 +1,13 @@
 var isSettingsDirty = false;
 var pmSettings = [];
 
-$("#setMQTT").on('pagebeforeshow', function() {
-  $("#mqtt_url").val($("#mqtturl").val());
-  $("#mqtt_port").val($("#mqtturl").val().substring($("#mqtturl").val().lastIndexOf(':')));
+$("#setMQTT").on('pagebeforeshow', function () {
+  const urlParts= $("#mqtturl").val().split(":");;
+  $("#mqtt_url").val(urlParts[1].substring(2));
+  $("#mqtt_port").val(urlParts[2]);
   $("#mqtt_login").val($("#mqttlogin").val());
   $("#mqtt_pwd").val($("#mqttpwd").val());
-})
-
+});
 $("#setMQTT").on("pagecreate", function () {
   $("#setMQTTForm").validate({
     rules: {
@@ -23,32 +23,33 @@ $("#setMQTT").on("pagecreate", function () {
     },
     submitHandler: function (form) {
       const formData = new FormData(form);
-      $("#mqtturl").val("mqtt://"+formData.mqtt_url+":"+formData.mqtt_port);
-      $("#mqttlogin").val(formData.mqtt_login);
-      $("#mqttpwd").val(formData.mqtt_pwd);
-      
+      $("#mqtturl").val("mqtt://" + formData.get("mqtt_url") + ":" + formData.get("mqtt_port"));
+      $("#mqttlogin").val(formData.get("mqtt_login"));
+      $("#mqttpwd").val(formData.get("mqtt_pwd"));
 
-      
-      // $.ajax({
-      //   type: "POST",
-      //   url: "./mqtt",
-      //   data: JSON.stringify(Object.fromEntries(formData)),
-      //   contentType: "application/json",
-      //   dataType: "json",
-      //   success: function (data, textStatus, jqXHR) {
-          
-      //   },
-      //   error: function (data, textStatus, jqXHR) {
-      //     //process error msg
-      //     $.mobile.changePage("#landing");
-      //   }
-      // });
+
+
+      $.ajax({
+        type: "POST",
+        url: "./mqtt",
+        data: JSON.stringify(Object.fromEntries(formData)),
+        contentType: "application/json",
+        dataType: "json",
+        success: function (data, textStatus, jqXHR) {
+          $.mobile.changePage("#landing");
+        },
+        error: function (data, textStatus, jqXHR) {
+          //process error msg
+          $.mobile.changePage("#landing");
+        }
+      });
     }
   });
 });
-let selectPmSelectInitialized=false;
+
+let selectPmSelectInitialized = false;
 $("#addPM").on("pageinit", function (event) {
-  selectPmSelectInitialized=true;
+  selectPmSelectInitialized = true;
 })
 $("#addPM").on("pagecreate", function () {
   $("#createPMForm").validate({
@@ -196,28 +197,84 @@ $('body').on('click', 'a[pmdeletetarget]', function () {
   _removePMSettings(target);
 });
 
-$("#btn-wifi").on("click",()=>{
-  $('#btn-wifi').buttonMarkup({ icon: "carat-"+($('#wifipanel').is(":visible")?"d":"u") });
+$("#btn-wifi").on("click", () => {
+  $('#btn-wifi').buttonMarkup({ icon: "carat-" + ($('#wifipanel').is(":visible") ? "d" : "u") });
   $('#wifipanel').toggle();
 });
-$("#btn-mqtt").on("click",()=>{
-  $('#btn-mqtt').buttonMarkup({ icon: "carat-"+($('#mqttpanel').is(":visible")?"d":"u") });
+$("#btn-mqtt").on("click", () => {
+  $('#btn-mqtt').buttonMarkup({ icon: "carat-" + ($('#mqttpanel').is(":visible") ? "d" : "u") });
   $('#mqttpanel').toggle();
 });
+function _downloadSettings(data, textStatus, jqXHR) {
+
+  // var data = [
+  //   { "dIO": 0, "name": "PAC", "nbTickByKW": 2000, "voltage": 230, "maxAmp": 16, "cumulative": 553, "ticks": 1 },
+  //   { "dIO": 2, "name": "Garage", "nbTickByKW": 1000, "voltage": 240, "maxAmp": 16, "cumulative": 7542, "ticks": 120 }
+  // ];
+  // _onSuccessDownloadSettings(data);
+
+  $.ajax({
+    type: "GET",
+    url: "./pm",
+    success: function (data, textStatus, jqXHR) {
+      console.log("get powermeters ok");
+      // disable upload button
+      $("#btn-upload").button('disable');
+      
+      // reset createPm dialog pm selector
+      $("#createPMForm_dIO option[disabled]").prop("disabled", false);
+      $("select#createPMForm_dIO").selectmenu("refresh", true);
+      
+      // clean pm list on main
+      $("#powermeterslist").empty();
+      
+      // fill pm list on main
+      isSettingsDirty = false;
+      pmSettings = data;
+      data.forEach(_appendNewPowermeterDisplay);
+      $("#powermeterslist").collapsibleset('refresh');
+    },
+    error: function (data, textStatus, jqXHR) {
+      //process error msg
+      console.log("get powermeters KO");
+    }
+  });
+
+};
 function _uploadSettings() {
   $("#btn-upload").button('disable');
+  $.ajax({
+    type: "PUT",
+    url: "./pm",
+    data: JSON.stringify(pmSettings),
+    contentType: "application/json",
+    dataType: "json",
+    success: function (data, textStatus, jqXHR) {
+    },
+    //   error: function (data, textStatus, jqXHR) {
+    //     //process error msg
+    //     $.mobile.changePage("#landing");
+    //   }
+  });
+
 }
 function _updatePMSettings(data) {
-  pmSettings = pmSettings.filter(element => (element.dIO === data.dIO) ? data : element);
+  let convertedData = {};
+  Object.entries(data).forEach((entry) =>
+    convertedData[entry[0]] = (entry[0] === "name") ? entry[1] : (entry[0] === "cumulative") ? parseFloat(entry[1]) : parseInt(entry[1]));
+  pmSettings = pmSettings.filter(element => (element.dIO === data.dIO) ? convertedData : element);
   isSettingsDirty = true;
   $("#btn-upload").button('enable');
   _replacePowermeterDisplay(data);
 }
 function _addPMSettings(data) {
-  pmSettings.push(data);
+  let convertedData = {};
+  Object.entries(data).forEach((entry) =>
+    convertedData[entry[0]] = (entry[0] === "name") ? entry[1] : (entry[0] === "cumulative") ? parseFloat(entry[1]) : parseInt(entry[1]));
+  pmSettings.push(convertedData);
   $("#btn-upload").button('enable');
   isSettingsDirty = true;
-  _appendNewPowermeterDisplay(data);
+  _appendNewPowermeterDisplay(convertedData);
 
 }
 function _removePMSettings(dIO) {
@@ -241,37 +298,37 @@ function _buildPowermeterDisplay(element, index) {
   return '<h3> PM' + dioToPmReferenceIndex[element.dIO] + ': <span id="name' + element.dIO + '">' + element.name + '</span><span class="ui-li-count" id="cumulative' + element.dIO + '">' + element.cumulative + '</span></h3>' +
     '<form>' +
     '<div class="ui-grid-a">' +
-    '<div class="ui-block-a">'+
-    '<div class="ui-field-contain">'+
-		'<label>tick:</label>'+
-		'<input type="text" id="ticks' + element.dIO + '" value="' + element.ticks + '" disabled="disabled" data-mini="true" >'+
-		'</div>'+
-    '</div>'+
-    '<div class="ui-block-b">'+
-    '<div class="ui-field-contain">'+
-		'<label>nbTicksByKw:</label>'+
-		'<input type="text" id="nbticks' + element.dIO + '" value="' + element.nbTickByKW + '" disabled="disabled" data-mini="true" >'+
-		'</div>'+
-    '</div>'+
+    '<div class="ui-block-a">' +
+    '<div class="ui-field-contain">' +
+    '<label>tick:</label>' +
+    '<input type="text" id="ticks' + element.dIO + '" value="' + element.ticks + '" disabled="disabled" data-mini="true" >' +
+    '</div>' +
+    '</div>' +
+    '<div class="ui-block-b">' +
+    '<div class="ui-field-contain">' +
+    '<label>nbTicksByKw:</label>' +
+    '<input type="text" id="nbticks' + element.dIO + '" value="' + element.nbTickByKW + '" disabled="disabled" data-mini="true" >' +
+    '</div>' +
+    '</div>' +
     '</div>' +
     '<div class="ui-grid-a">' +
-    '<div class="ui-block-a">'+
-    '<div class="ui-field-contain">'+
-		'<label>voltage:</label>'+
-		'<input type="text" id="voltage' + element.dIO + '" value="' + element.voltage + '" disabled="disabled" data-mini="true" >'+
-		'</div>'+
-    '</div>'+
-    '<div class="ui-block-b">'+
-    '<div class="ui-field-contain">'+
-		'<label>maxAmp</label>'+
-		'<input type="text" id="maxamp' + element.dIO + '" value="' + element.maxAmp + '" disabled="disabled" data-mini="true" >'+
-		'</div>'+
-    '</div>'+
+    '<div class="ui-block-a">' +
+    '<div class="ui-field-contain">' +
+    '<label>voltage:</label>' +
+    '<input type="text" id="voltage' + element.dIO + '" value="' + element.voltage + '" disabled="disabled" data-mini="true" >' +
+    '</div>' +
+    '</div>' +
+    '<div class="ui-block-b">' +
+    '<div class="ui-field-contain">' +
+    '<label>maxAmp</label>' +
+    '<input type="text" id="maxamp' + element.dIO + '" value="' + element.maxAmp + '" disabled="disabled" data-mini="true" >' +
+    '</div>' +
+    '</div>' +
     '</div>' +
     '<div>' +
     '<a href="#" pmedittarget="' + element.dIO + '" class="ui-btn ui-shadow ui-corner-all ui-icon-edit ui-btn-icon-notext ui-btn-inline">Edit</a>' +
     '<a href="#" pmdeletetarget="' + element.dIO + '" class="ui-btn ui-shadow ui-corner-all ui-icon-delete ui-btn-icon-notext ui-btn-inline">Delete</a>' +
-    '</div>'+
+    '</div>' +
     '</form>';
 }
 
@@ -279,9 +336,8 @@ function _removePowermeterDisplay(dIO) {
   $("div[dio=" + dIO + "]").remove();
   $("#powermeterslist").collapsibleset('refresh', true);
   $("#createPMForm_dIO option[value='" + dIO + "']").removeAttr("disabled", false);
-  if(selectPmSelectInitialized) 
-  {
-    $("select#createPMForm_dIO").selectmenu("refresh",true);
+  if (selectPmSelectInitialized) {
+    $("select#createPMForm_dIO").selectmenu("refresh", true);
   }
 }
 function _replacePowermeterDisplay(element, index) {
@@ -296,7 +352,7 @@ function _replacePowermeterDisplay(element, index) {
 }
 function _appendNewPowermeterDisplay(element, index) {
   var newItem = $('<div>')
-    .attr({ 'data-role': 'collapsible', 'data-collapsed': 'true', 'dio': element.dIO, 'data-collapsed-icon':'carat-d', 'data-expanded-icon':'carat-u'})
+    .attr({ 'data-role': 'collapsible', 'data-collapsed': 'true', 'dio': element.dIO, 'data-collapsed-icon': 'carat-d', 'data-expanded-icon': 'carat-u' })
     .html(_buildPowermeterDisplay(element));
 
   // Sort by PM index
@@ -311,28 +367,14 @@ function _appendNewPowermeterDisplay(element, index) {
 
   // remove PM from option
   $("#createPMForm_dIO option[value='" + element.dIO + "']").prop("disabled", true);
-  if(selectPmSelectInitialized) $("select#createPMForm_dIO").selectmenu("refresh",true);
+  if (selectPmSelectInitialized) $("select#createPMForm_dIO").selectmenu("refresh", true);
   $("#powermeterslist").collapsibleset('refresh');
 }
 const dioToPmReferenceIndex = [1, 9, 10, 8, 2, 255, 255, 255, 255, 255, 255, 255, 5, 6, 4, 7, 3];
 const pmReferenceIndexToDio = [255, /*PM1 D3*/0, /*PM2 D2*/4, /*PM3 D1*/16, /*PM4 D5*/14, /*PM5 D6*/12, /*PM6 D7*/13, /*PM7 D8*/15, /*PM8 D9*/3, /*PM9 D10*/1, /*PM10 D4*/2];
 
 
-function _downloadSettings() {
-  var data = [
-    { "dIO": "0", "name": "PAC", "nbTickByKW": "2000", "voltage": "230", "maxAmp": "16", "cumulative": "553", "ticks": "1" },
-    { "dIO": "2", "name": "Garage", "nbTickByKW": "1000", "voltage": "240", "maxAmp": "16", "cumulative": "7542", "ticks": "120" }
-  ];
-  console.log("get powermeters ok");
 
-  $("#btn-upload").button('disable');
-
-  isSettingsDirty = false;
-  pmSettings = data;
-  $("#powermeterslist").empty();
-  data.forEach(_appendNewPowermeterDisplay);
-  $("#powermeterslist").collapsibleset('refresh');
-};
 $("#landing").on("pageinit", function (event) {
   _downloadSettings();
 })
@@ -364,20 +406,20 @@ $(document).ready(function () {
       return;
     }
     if (pmdEvent.type === "wc") {
-      if(pmdEvent.datas.ssid) $("#ssid").val(pmdEvent.datas.ssid);
-      if(pmdEvent.datas.ip) $("#ip").val(pmdEvent.datas.ip);
-      if(pmdEvent.datas.rssi) $("#rssi").val(pmdEvent.datas.rssi);
-      if(pmdEvent.datas.host) $("#host").val(pmdEvent.datas.host);
-      if(pmdEvent.datas.bssid) $("#bssid").val(pmdEvent.datas.bssid);
-      if(pmdEvent.datas.channel) $("#channel").val(pmdEvent.datas.channel);
-      if(pmdEvent.datas.status) {
+      if (pmdEvent.datas.ssid) $("#ssid").val(pmdEvent.datas.ssid);
+      if (pmdEvent.datas.ip) $("#ip").val(pmdEvent.datas.ip);
+      if (pmdEvent.datas.rssi) $("#rssi").val(pmdEvent.datas.rssi);
+      if (pmdEvent.datas.host) $("#host").val(pmdEvent.datas.host);
+      if (pmdEvent.datas.bssid) $("#bssid").val(pmdEvent.datas.bssid);
+      if (pmdEvent.datas.channel) $("#channel").val(pmdEvent.datas.channel);
+      if (pmdEvent.datas.status) {
         $("#status").val(wifiStatusToString[pmdEvent.datas.status]);
         $("#wifisumup").html(wifiStatusToString[pmdEvent.datas.status]);
       }
       return;
     }
   };
-  const wifiStatusToString=["Idle","No ssid avail","Scan completed","Connected","Connect failed","Connection lost","Wrong password","Disconnected"];
+  const wifiStatusToString = ["Idle", "No ssid avail", "Scan completed", "Connected", "Connect failed", "Connection lost", "Wrong password", "Disconnected"];
 
   ws.onclose = function (evt) { console.log("WS:Connection closed."); };
   ws.onerror = function (evt) { console.log("WS:WebSocket error : " + evt.data) };
