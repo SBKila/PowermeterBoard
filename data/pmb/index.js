@@ -223,7 +223,9 @@ function _downloadSettings(data, textStatus, jqXHR) {
       
       // reset createPm dialog pm selector
       $("#createPMForm_dIO option[disabled]").prop("disabled", false);
-      $("select#createPMForm_dIO").selectmenu("refresh", true);
+      if (selectPmSelectInitialized) {
+        $("select#createPMForm_dIO").selectmenu("refresh", true);
+      }
       
       // clean pm list on main
       $("#powermeterslist").empty();
