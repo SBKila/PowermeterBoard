@@ -19,11 +19,26 @@ label.error {
     float: none;
 }
 
+.sumupOK {  
+    color: green;
+    border-color: green;
+}
+.sumupKO {  
+    color: red;
+    border-color: red;
+}
 .sumup {
+    border-style: solid;
+    border-width: thin;
+    border-radius: 0.7em;
+    
+    padding: 0.3em;
+    margin-top: 0.7em;
+    margin-right: 4em;
+    
     text-align: right;
     font-style: italic;
     font-weight: lighter;
     font-size: small;
     float: right;
-    margin-right: 4em;
 }

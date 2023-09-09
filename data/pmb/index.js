@@ -308,7 +308,7 @@ function _buildPowermeterDisplay(element, index) {
     '</div>' +
     '<div class="ui-block-b">' +
     '<div class="ui-field-contain">' +
-    '<label>nbTicksByKw:</label>' +
+    '<label>ticks/kWh:</label>' +
     '<input type="text" id="nbticks' + element.dIO + '" value="' + element.nbTickByKW + '" disabled="disabled" data-mini="true" >' +
     '</div>' +
     '</div>' +
@@ -322,7 +322,7 @@ function _buildPowermeterDisplay(element, index) {
     '</div>' +
     '<div class="ui-block-b">' +
     '<div class="ui-field-contain">' +
-    '<label>maxAmp</label>' +
+    '<label>maxAmp:</label>' +
     '<input type="text" id="maxamp' + element.dIO + '" value="' + element.maxAmp + '" disabled="disabled" data-mini="true" >' +
     '</div>' +
     '</div>' +
@@ -399,12 +399,14 @@ $(document).ready(function () {
     if (pmdEvent.type === "mcs") {
       $("#mqttstatus").val(pmdEvent.datas ? "Connected" : "Disconnected");
       $("#mqttsumup").html(pmdEvent.datas ? "Connected" : "Disconnected");
+      $("#mqttsumup").removeClass("sumupOK sumupKO").addClass(pmdEvent.datas ? "sumupOK" : "sumupKO");
       return;
     }
     // MQTT connection status
     if (pmdEvent.type === "ws") {
       $("#status").val(wifiStatusToString[pmdEvent.datas]);
       $("#wifisumup").html(wifiStatusToString[pmdEvent.datas]);
+      $("#wifisumup").removeClass("sumupOK sumupKO").addClass((pmdEvent.datas==3) ? "sumupOK" : "sumupKO");
       return;
     }
     if (pmdEvent.type === "wc") {
@@ -417,6 +419,7 @@ $(document).ready(function () {
       if (pmdEvent.datas.status) {
         $("#status").val(wifiStatusToString[pmdEvent.datas.status]);
         $("#wifisumup").html(wifiStatusToString[pmdEvent.datas.status]);
+        $("#wifisumup").removeClass("sumupOK sumupKO").addClass((pmdEvent.datas.status==3) ? "sumupOK" : "sumupKO");
       }
       return;
     }

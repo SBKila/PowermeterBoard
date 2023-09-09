@@ -16,6 +16,7 @@ Think about moving adapter to PMBoard project => it is not HA lib
 28/08/23 Fix UI add remove PM issues ==> disable item in menu list PM reference
 30/08/23 add wifi info in UI
 04/09/23 FiX MQTT settings UI and state notification
+09/09/23 Add color and border to connection sumup
 
 @todo
 => Understanb how to manage connection to MQTT server full connected or connect on demand ?? 
