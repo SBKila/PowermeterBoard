@@ -67,7 +67,7 @@ public:
         // manage PowerMeter setting
         m_SettingsPersistanceIndex = EEPROMEX.allocate(sizeof(PowermeterBoardSettings));
     }
-    
+
     void setupEditPowerMeterHandler(const char *deviceName, Client &pEthClient, AsyncWebServer *p_pWebServer, fs::FS fs)
     {
         AsyncCallbackJsonWebHandler *handler = new AsyncCallbackJsonWebHandler("/pmb/pm", [this](AsyncWebServerRequest *request, JsonVariant &json)
@@ -178,8 +178,8 @@ public:
                 for (int i = 0; i < 10; i++)
                 {
                     Powermeter *pPowerMeter = this->m_Powermeters[i];
-                    
-                    PWBOARD_DEBUG_MSG("(%d,%d),",i,(NULL != pPowerMeter)?pPowerMeter->getDefinition().dIO:-1);
+
+                    PWBOARD_DEBUG_MSG("(%d,%d),", i, (NULL != pPowerMeter) ? pPowerMeter->getDefinition().dIO : -1);
                     if (NULL != pPowerMeter)
                     {
                         atleastone = true;
@@ -211,7 +211,7 @@ public:
                                                                                {
             PWBOARD_DEBUG_MSG("POST /pmb/mqtt\n");
             const JsonObject &jsonObj = json.as<JsonObject>();
-            
+
             strncpy(this->m_PowermeterBoardSettings.mqtt_domain, jsonObj["mqtt_url"],sizeof(this->m_PowermeterBoardSettings.mqtt_domain));
             this->m_PowermeterBoardSettings.mqtt_port = atoi(jsonObj["mqtt_port"]);
             strncpy(this->m_PowermeterBoardSettings.mqtt_login, jsonObj["mqtt_login"],sizeof(this->m_PowermeterBoardSettings.mqtt_login));
@@ -242,7 +242,7 @@ public:
 
         setupEditPowerMeterHandler(deviceName, pEthClient, p_pWebServer, fs);
         setupAddPowerMeterHandler(deviceName, pEthClient, p_pWebServer, fs);
-        
+
         m_pPowerMeterDevice = new HALIB_NAMESPACE::HADevice(deviceName, "Kila Product", "PowerMeter", "v 0.1");
 
         // attach AsyncWebSocket
@@ -511,6 +511,7 @@ private:
                 [this, powermeterIndex](DDS238Data data)
                 {
                     this->m_PowermeterDatasPersistance[powermeterIndex] = data;
+                    // @TODO analyse if broadcast should be done async in main loop 
                     this->_broadcastPowerMeterData(powermeterIndex, NULL);
                     this->isPersistanceDirty = true;
                 });
@@ -609,8 +610,31 @@ private:
         }
         _broadcastEvent("pdu", root, client);
     }
+    const char *_wl_status_to_string(wl_status_t status)
+    {
+        switch (status)
+        {
+        case WL_NO_SHIELD:
+            return "WL_NO_SHIELD";
+        case WL_IDLE_STATUS:
+            return "WL_IDLE_STATUS";
+        case WL_NO_SSID_AVAIL:
+            return "WL_NO_SSID_AVAIL";
+        case WL_SCAN_COMPLETED:
+            return "WL_SCAN_COMPLETED";
+        case WL_CONNECTED:
+            return "WL_CONNECTED";
+        case WL_CONNECT_FAILED:
+            return "WL_CONNECT_FAILED";
+        case WL_CONNECTION_LOST:
+            return "WL_CONNECTION_LOST";
+        case WL_DISCONNECTED:
+            return "WL_DISCONNECTED";
+        }
+    }
     void _broadcastMQTTConnectionStatus(AsyncWebSocketClient *client)
     {
+        PWBOARD_DEBUG_MSG("_broadcastMQTTConnectionStatus %sconnected\n", (isMqttconnected) ? "" : "dis");
         // allocate the memory for the document
         DynamicJsonDocument doc(10);
         // create a variant
@@ -621,6 +645,7 @@ private:
     }
     void _broadcastWIFIStatus(AsyncWebSocketClient *client)
     {
+        PWBOARD_DEBUG_MSG("_broadcastWIFIStatus %s to %s\n", _wl_status_to_string(WiFi.status()), (NULL == client) ? "ALL" : "client");
         // allocate the memory for the document
         DynamicJsonDocument doc(10);
         // create a variant
@@ -630,6 +655,7 @@ private:
     }
     void _broadcastWIFIConfig(AsyncWebSocketClient *client)
     {
+        PWBOARD_DEBUG_MSG("_broadcastWIFIConfig to %s\n", (NULL == client) ? "ALL" : "client");
         // allocate the memory for the document
         const size_t CAPACITY = JSON_OBJECT_SIZE(1);
         DynamicJsonDocument doc(256);
