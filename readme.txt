@@ -19,7 +19,8 @@ Think about moving adapter to PMBoard project => it is not HA lib
 09/09/23 Add color and border to connection sumup
 
 @todo
-=> Understanb how to manage connection to MQTT server full connected or connect on demand ?? 
+=> optimyse persistance by adding dedicated setupDirty flags
+=> Understand how to manage connection to MQTT server full connected or connect on demand ?? 
 => next debug MQTT login+password when nothing is set for now isSetup flag is used as work around
 => Think about moving adapter to PMBoard project => it is not HA lib
 => Add action warning in UI
