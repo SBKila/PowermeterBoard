@@ -264,7 +264,7 @@ function _updatePMSettings(data) {
   let convertedData = {};
   Object.entries(data).forEach((entry) =>
     convertedData[entry[0]] = (entry[0] === "name") ? entry[1] : (entry[0] === "cumulative") ? parseFloat(entry[1]) : parseInt(entry[1]));
-  pmSettings = pmSettings.filter(element => (element.dIO === data.dIO) ? convertedData : element);
+  pmSettings = pmSettings.map(element => (element.dIO === convertedData.dIO) ? convertedData : element);
   isSettingsDirty = true;
   $("#btn-upload").button('enable');
   _replacePowermeterDisplay(data);
