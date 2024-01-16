@@ -57,5 +57,7 @@
         "cinttypes": "cpp",
         "variant": "cpp",
         "ihaadapter.hpp": "c"
-    }
+    },
+    "cmake.configureOnOpen": false,
+    "C_Cpp.errorSquiggles": "disabled"
 }

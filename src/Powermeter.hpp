@@ -28,11 +28,11 @@ static const uint8_t BoardIOToPowermeterIndex[16] = {0,8,9,7,1,2,255,255,255,255
 class Powermeter
 {
 public:
-    Powermeter(PowermeterDef p_Definition, HADevice *p_pHADevice, HA_DDS238_PERSISTENT_FUNCTION p_PersistenceFunction)
+    Powermeter(PowermeterDef p_Definition, DDS238Data p_values, HADevice *p_pHADevice, HA_DDS238_PERSISTENT_FUNCTION p_PersistenceFunction)
     {
         // keep powermeter definition
         m_Definition = p_Definition;
-
+        
         // create HomeAssistant Adapter
         m_pPowermeterAdapter = new HAAdapterDDS238(
             p_Definition.name,
@@ -43,10 +43,16 @@ public:
             p_PersistenceFunction);
 
         // setup HomeAssistant Adapter
+        m_pPowermeterAdapter->restore(p_values);
         m_pPowermeterAdapter->setup();
 
         // link HomeAssistant Adapter to device
         m_pPowermeterAdapter->setDevice(p_pHADevice);
+    }
+    virtual ~Powermeter(){
+        if(NULL != m_pPowermeterAdapter){
+            delete m_pPowermeterAdapter;
+        }
     }
 
     PowermeterDef getDefinition()

@@ -2,7 +2,7 @@ var isSettingsDirty = false;
 var pmSettings = [];
 
 $("#setMQTT").on('pagebeforeshow', function () {
-  const urlParts= $("#mqtturl").val().split(":");;
+  const urlParts = $("#mqtturl").val().split(":");;
   $("#mqtt_url").val(urlParts[1].substring(2));
   $("#mqtt_port").val(urlParts[2]);
   $("#mqtt_login").val($("#mqttlogin").val());
@@ -80,33 +80,30 @@ $("#addPM").on("pagecreate", function () {
     },
     submitHandler: function (form) {
       if ($("#createPMForm").valid()) {
-        const formData = new FormData(form);
-        var data = {};
-        for (var pair of formData.entries()) {
-          data[pair[0]] = pair[1];
-        }
-        _addPMSettings(data);
-        $("#createPMForm").trigger("reset")
-        $.mobile.changePage("#landing");
-      }
+        const formData = Object.fromEntries(new FormData(form));
+        //   _addPMSettings(formData);
+        //   $("#createPMForm").trigger("reset")
+        //   $.mobile.changePage("#landing");
+        // }
 
-      // $.ajax({
-      //   type: "PUT",
-      //   url: "./pm",
-      //   data: JSON.stringify(Object.fromEntries(formData)),
-      //   contentType: "application/json",
-      //   dataType: "json",
-      //   success: function (data, textStatus, jqXHR) {
-      //     appendNewPowermeter(data);
-      //     $("#powermeterslist").collapsibleset('refresh');
-      //     $.mobile.changePage("#landing");
-      //   },
-      //   error: function (data, textStatus, jqXHR) {
-      //     //process error msg
-      //     $.mobile.changePage("#landing");
-      //   }
-      // }
-      // );
+        $.ajax({
+          type: "PUT",
+          url: "./pm",
+          data: JSON.stringify(formData),
+          contentType: "application/json",
+          dataType: "json",
+          success: function (data, textStatus, jqXHR) {
+            _appendNewPowermeterDisplay(data);
+            $("#powermeterslist").collapsibleset('refresh');
+            $.mobile.changePage("#landing");
+          },
+          error: function (data, textStatus, jqXHR) {
+            //process error msg
+            $.mobile.changePage("#landing");
+          }
+        }
+        );
+      }
     }
   }
   );
@@ -140,31 +137,39 @@ $("#editPM").on("pagecreate", function () {
       error.insertAfter(element.parent());
     },
     submitHandler: function (form) {
-      const formData = new FormData(form);
-      var data = {};
-      for (var pair of formData.entries()) {
-        data[pair[0]] = pair[1];
-      }
-      data.dIO = data.dIO.substring(2);
-      _updatePMSettings(data);
-      $.mobile.changePage("#landing");
-      // $.ajax({
-      //   type: "POST",
-      //   url: "./pm",
-      //   data: JSON.stringify(Object.fromEntries(formData)),
-      //   contentType: "application/json",
-      //   dataType: "json",
-      //   success: function (data, textStatus, jqXHR) {
-      //     updatePowermeter(data);
-      //     $("#powermeterslist").collapsibleset('refresh');
-      //     $.mobile.changePage("#landing");
-      //   },
-      //   error: function (data, textStatus, jqXHR) {
-      //     //process error msg
-      //     $.mobile.changePage("#landing");
-      //   }
+      const formData = Object.fromEntries(new FormData(form));
+      // formData.dIO = formData.dIO.substring(2);
+      formData.pmref = formData.pmref.substring(2);
+      // var data = {};
+      // for (var pair of formData.entries()) {
+      //   data[pair[0]] = pair[1];
       // }
-      // );
+      // data.dIO = data.dIO.substring(2);
+      // _updatePMSettings(data);
+      // $.mobile.changePage("#landing");
+      $.ajax({
+        type: "POST",
+        url: "./pm",
+        data: JSON.stringify(formData),
+        contentType: "application/json",
+        dataType: "json",
+        success: function (data, textStatus, jqXHR) {
+          //updatePowermeter(data);
+          $("#name" + data.dIO).text(data.name);
+          $("#ticks" + data.dIO).val(data.ticks);
+          $("#nbticks" + data.dIO).val(data.nbTickByKW);
+          // $("#editpm_voltage")[0].selectedIndex = $("#editpm_voltage option[value=" + $("#voltage" + data.dIO).val() + "]").index();
+          $("#maxamp" + data.dIO).val(data.maxAmp);
+          $("#cumulative" + data.dIO).text(data.cumulative);
+          $("#powermeterslist").collapsibleset('refresh');
+          $.mobile.changePage("#landing");
+        },
+        error: function (data, textStatus, jqXHR) {
+          //process error msg
+          $.mobile.changePage("#landing");
+        }
+      }
+      );
     }
   }
   );
@@ -179,7 +184,7 @@ $("#btn-upload").on("click", () => {
 
 $('body').on('click', 'a[pmedittarget]', function () {
   var pm = $(this).attr("pmedittarget");
-  $("#editpm_ref").val("PM" + pm);
+  $("#editpm_ref").val("PM" + dioToPmReferenceIndex[pm]);
   $("#editpm_name").val($("#name" + pm).text());
   $("#editpm_ticks").val($("#ticks" + pm).val());
   $("#editpm_nbtick").val($("#nbticks" + pm).val());
@@ -220,16 +225,16 @@ function _downloadSettings(data, textStatus, jqXHR) {
       console.log("get powermeters ok");
       // disable upload button
       $("#btn-upload").button('disable');
-      
+
       // reset createPm dialog pm selector
       $("#createPMForm_dIO option[disabled]").prop("disabled", false);
       if (selectPmSelectInitialized) {
         $("select#createPMForm_dIO").selectmenu("refresh", true);
       }
-      
+
       // clean pm list on main
       $("#powermeterslist").empty();
-      
+
       // fill pm list on main
       isSettingsDirty = false;
       pmSettings = data;
@@ -375,8 +380,6 @@ function _appendNewPowermeterDisplay(element, index) {
 const dioToPmReferenceIndex = [1, 9, 10, 8, 2, 255, 255, 255, 255, 255, 255, 255, 5, 6, 4, 7, 3];
 const pmReferenceIndexToDio = [255, /*PM1 D3*/0, /*PM2 D2*/4, /*PM3 D1*/16, /*PM4 D5*/14, /*PM5 D6*/12, /*PM6 D7*/13, /*PM7 D8*/15, /*PM8 D9*/3, /*PM9 D10*/1, /*PM10 D4*/2];
 
-
-
 $("#landing").on("pageinit", function (event) {
   _downloadSettings();
 })
@@ -388,10 +391,10 @@ $(document).ready(function () {
   ws.onmessage = function (evt) {
     var pmdEvent = JSON.parse(evt.data);
     console.log("WS:Received Message: " + evt.data);
-    if (pmdEvent.type === "pdu") {
+    if ((pmdEvent.type === "pdu") && (pmdEvent.datas)) {
       pmdEvent.datas.forEach(function (element) {
         $("#cumulative" + element.dIO).html(element.cumulative);
-        $("#ticks" + element.dIO).html(element.ticks);
+        $("#ticks" + element.dIO).val(element.ticks);
       })
       return;
     }
@@ -406,7 +409,7 @@ $(document).ready(function () {
     if (pmdEvent.type === "ws") {
       $("#status").val(wifiStatusToString[pmdEvent.datas]);
       $("#wifisumup").html(wifiStatusToString[pmdEvent.datas]);
-      $("#wifisumup").removeClass("sumupOK sumupKO").addClass((pmdEvent.datas==3) ? "sumupOK" : "sumupKO");
+      $("#wifisumup").removeClass("sumupOK sumupKO").addClass((pmdEvent.datas == 3) ? "sumupOK" : "sumupKO");
       return;
     }
     if (pmdEvent.type === "wc") {
@@ -419,7 +422,7 @@ $(document).ready(function () {
       if (pmdEvent.datas.status) {
         $("#status").val(wifiStatusToString[pmdEvent.datas.status]);
         $("#wifisumup").html(wifiStatusToString[pmdEvent.datas.status]);
-        $("#wifisumup").removeClass("sumupOK sumupKO").addClass((pmdEvent.datas.status==3) ? "sumupOK" : "sumupKO");
+        $("#wifisumup").removeClass("sumupOK sumupKO").addClass((pmdEvent.datas.status == 3) ? "sumupOK" : "sumupKO");
       }
       return;
     }
