@@ -9,13 +9,11 @@
 #include "ArduinoJson.h"
 #include "Powermeter.hpp"
 
-
 #ifdef DEBUG_PWBOARD
 #define PWBOARD_DEBUG_MSG(...) DEBUG_MSG("PWBOARD", __VA_ARGS__)
 #else
 #define PWBOARD_DEBUG_MSG(...)
 #endif
-
 
 #ifdef EEPROMMAGIC
 #define PMBMAGIC EEPROMMAGIC
@@ -63,7 +61,7 @@ public:
         m_SettingsPersistanceIndex = EEPROMEX.allocate(sizeof(PowermeterBoardSettings));
     }
 
-    void setupUpdatePowerMeterHandler(const char *deviceName, Client &pEthClient, AsyncWebServer *p_pWebServer, fs::FS fs)
+    void setupHandlerUpdatePowerMeter(const char *deviceName, Client &pEthClient, AsyncWebServer *p_pWebServer, fs::FS fs)
     {
         AsyncCallbackJsonWebHandler *handler = new AsyncCallbackJsonWebHandler(
             "/pmb/pm",
@@ -91,18 +89,20 @@ public:
                     m_PowermeterDatasPersistance[powermeterIndex].tag = powermeterValues.tag;
                     m_PowermeterDatasPersistance[powermeterIndex].ticks = powermeterValues.ticks;
                     m_PowermeterDatasPersistance[powermeterIndex].cumulative = powermeterValues.cumulative;
-
-                    if (_addPowermeter(powermeterDef, powermeterValues))
-                    {
-                        request->send(200, "application/json", _getPowermeterAsJsonString(powermeterDef));
-                    }
                 }
-                request->send(400);
+                if (_addPowermeter(powermeterDef, powermeterValues))
+                {
+                    request->send(200, "application/json", _getPowermeterAsJsonString(powermeterDef));
+                }
+                else
+                {
+                    request->send(400);
+                }
             });
         handler->setMethod(HTTP_POST);
         p_pWebServer->addHandler(handler);
     };
-    void setupAddPowerMeterHandler(const char *deviceName, Client &pEthClient, AsyncWebServer *p_pWebServer, fs::FS fs)
+    void setupHandlerAddPowerMeter(const char *deviceName, Client &pEthClient, AsyncWebServer *p_pWebServer, fs::FS fs)
     {
         AsyncCallbackJsonWebHandler *handler = new AsyncCallbackJsonWebHandler(
             "/pmb/pm",
@@ -200,7 +200,23 @@ public:
         handler->setMethod(HTTP_PUT);
         p_pWebServer->addHandler(handler);
     }
-    void setupSetListPMsHandler(const char *deviceName, Client &pEthClient, AsyncWebServer *p_pWebServer, fs::FS fs)
+    void setupHandlerDeletePowerMeter(const char *deviceName, Client &pEthClient, AsyncWebServer *p_pWebServer, fs::FS fs)
+    {
+        // Handle a DELETE request to /pmb/pm/<pmIndex>
+        p_pWebServer->on(
+            "^\\/pmb\\/pm\\/([0-9])$",
+            HTTP_DELETE,
+            [this](AsyncWebServerRequest *request)
+            {
+                uint8 powermeterIndex = (uint8)request->pathArg(0).toInt();
+                PWBOARD_DEBUG_MSG("DELETE /pmb/pm/%d\n", powermeterIndex);
+                boolean removed = this->_removePowermeter(powermeterIndex) if () {}
+                request->send(removed ? 200 : 404);
+                if (removed)
+                    this->_broadcastPowerMeterRemoved(powermeterIndex, NULL);
+            });
+    };
+    void setupHandlerSetListPMs(const char *deviceName, Client &pEthClient, AsyncWebServer *p_pWebServer, fs::FS fs)
     {
         p_pWebServer->on(
             "/pmb/pm",
@@ -251,7 +267,7 @@ public:
             NULL,
             NULL);
     }
-    void setupSetMqttHandler(const char *deviceName, Client &pEthClient, AsyncWebServer *p_pWebServer, fs::FS fs)
+    void setupHandlerSetMqtt(const char *deviceName, Client &pEthClient, AsyncWebServer *p_pWebServer, fs::FS fs)
     {
 
         AsyncCallbackJsonWebHandler *handler = new AsyncCallbackJsonWebHandler("/pmb/mqtt", [this](AsyncWebServerRequest *request, JsonVariant &json)
@@ -282,14 +298,14 @@ public:
         m_pEthClient = &pEthClient;
 
         // attach set mqtt settings
-        setupSetMqttHandler(deviceName, pEthClient, p_pWebServer, fs);
+        setupHandlerSetMqtt(deviceName, pEthClient, p_pWebServer, fs);
 
         // Get list of configured powermeter
-        setupSetListPMsHandler(deviceName, pEthClient, p_pWebServer, fs);
+        setupHandlerSetListPMs(deviceName, pEthClient, p_pWebServer, fs);
 
-        setupUpdatePowerMeterHandler(deviceName, pEthClient, p_pWebServer, fs);
-        setupAddPowerMeterHandler(deviceName, pEthClient, p_pWebServer, fs);
-
+        setupHandlerUpdatePowerMeter(deviceName, pEthClient, p_pWebServer, fs);
+        setupHandlerAddPowerMeter(deviceName, pEthClient, p_pWebServer, fs);
+        setupHandlerDeletePowerMeter(deviceName, pEthClient, p_pWebServer, fs);
         m_pPowerMeterDevice = new HALIB_NAMESPACE::HADevice(deviceName, "Kila Product", "PowerMeter", "v 0.1");
 
         // attach AsyncWebSocket
@@ -612,6 +628,8 @@ private:
             this->isPersistanceDirty = true;
 
             PWBOARD_DEBUG_MSG("add new powermeter %d %d\n", BoardIOToPowermeterIndex[powermeterDef.dIO] + 1, powermeterDef.dIO);
+            this->_broadcastPowerMeterInfo(powermeterIndex, NULL);
+
             return true;
         }
         else
@@ -621,6 +639,25 @@ private:
         }
     }
 
+    void _broadcastPowerMeterRemoved(uint8 index, AsyncWebSocketClient *client)
+    {
+        PWBOARD_DEBUG_MSG("_broadcastPowerMeterInfo %d to %s\n", index, (NULL == client) ? "ALL" : "client");
+        JsonDocument doc;
+        doc["type"] = "pmd";
+        doc["datas"] = index;
+
+        String response;
+        doc.shrinkToFit(); // optional
+        serializeJson(doc, response);
+        if (NULL != client)
+        {
+            client->text(response);
+        }
+        else
+        {
+            ws.textAll(response);
+        }
+    }
     void _broadcastPowerMeterInfo(int index, AsyncWebSocketClient *client)
     {
         PWBOARD_DEBUG_MSG("_broadcastPowerMeterInfo %d to %s\n", index, (NULL == client) ? "ALL" : "client");
@@ -641,19 +678,20 @@ private:
                     break;
             }
         }
-
-        String response;
-        doc.shrinkToFit(); // optional
-        serializeJson(doc, response);
-        if (NULL != client)
+        if (doc.containsKey("datas"))
         {
-            client->text(response);
+            String response;
+            doc.shrinkToFit(); // optional
+            serializeJson(doc, response);
+            if (NULL != client)
+            {
+                client->text(response);
+            }
+            else
+            {
+                ws.textAll(response);
+            }
         }
-        else
-        {
-            ws.textAll(response);
-        }
-
         // const size_t CAPACITY = JSON_OBJECT_SIZE(7);
         // int nbElement = 0;
 
@@ -712,17 +750,20 @@ private:
                     break;
             }
         }
-
-        String response;
-        doc.shrinkToFit(); // optional
-        serializeJson(doc, response);
-        if (NULL != client)
+        // post only if datas present
+        if (doc.containsKey("datas"))
         {
-            client->text(response);
-        }
-        else
-        {
-            ws.textAll(response);
+            String response;
+            doc.shrinkToFit(); // optional
+            serializeJson(doc, response);
+            if (NULL != client)
+            {
+                client->text(response);
+            }
+            else
+            {
+                ws.textAll(response);
+            }
         }
 
         // const size_t CAPACITY = JSON_OBJECT_SIZE(4);
