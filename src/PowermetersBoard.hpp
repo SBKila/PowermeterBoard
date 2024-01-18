@@ -210,7 +210,7 @@ public:
             {
                 uint8 powermeterIndex = (uint8)request->pathArg(0).toInt();
                 PWBOARD_DEBUG_MSG("DELETE /pmb/pm/%d\n", powermeterIndex);
-                boolean removed = this->_removePowermeter(powermeterIndex) if () {}
+                boolean removed = this->_removePowermeter(powermeterIndex);
                 request->send(removed ? 200 : 404);
                 if (removed)
                     this->_broadcastPowerMeterRemoved(powermeterIndex, NULL);
