@@ -1,113 +1,204 @@
 
-
 #include <Arduino.h>
+#include "myDebugLogs.h"
+#include "global.h"
+
 #include <ESP8266mDNS.h>
 #include "FS.h" // SPIFFS is declared
-//#include "LittleFS.h" // LittleFS is declared
+#include <SPIFFSEditor.h>
+// #include "LittleFS.h" // LittleFS is declared
 #include "EEPROMEX.h"
 #include <ArduinoOTA.h>
+#include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#include <AsyncJson.h>
-#include <SPIFFSEditor.h>
 #include <ArduinoJson.h>
+#include <AsyncJson.h>
+// #include "magiclogger.hpp"
 #include "WifiManager.hpp"
 #include "PowermetersBoard.hpp"
-
-#ifdef DEBUG_MAIN
-#ifdef DEBUG_ESP_PORT
-#define MAIN_DEBUG_INIT(x) DEBUG_ESP_PORT.begin(x)
-#define MAIN_DEBUG_MSG(...)        \
-  DEBUG_ESP_PORT.print("[MAIN] "); \
-  DEBUG_ESP_PORT.printf(__VA_ARGS__)
-#else
-#define DEBUG_INIT(x)
-#define MAIN_DEBUG_MSG(...)
-#endif
-#else
-#define DEBUG_INIT(x)
-#define MAIN_DEBUG_MSG(...)
-#endif
-
-AsyncWebServer m_WiFiServer(80);
+boolean webserverstarted = false;
+AsyncWebServer m_WebServer(80);
 FS m_fileSystem = SPIFFS;
 WiFiClient m_espClient;
-#define MAGIC 933
+AsyncWebSocket m_ws("/ws");
+char logString[256];
 
-struct settings
-{
-  int tag;
-  char node_name[32];
-  char openhab_mqtt_url[128];
-  int openhab_mqtt_port = 1883;
-  char openhab_mqtt_login[32];
-  char openhab_mqtt_pwd[64];
-};
+#ifdef DEBUG_MAIN
+#define MAIN_DEBUG_MSG(...) DEBUG_MSG("MAIN", __VA_ARGS__)
+#else
+#define MAIN_DEBUG_MSG(...)
+#endif
+
 int _SettingsPersistanceIndex;
-boolean _IsSettingsDirty = false;
-settings _SettingsData;
-boolean isSettingsDefined()
+int m_NbBootPersistanceIndex = 0;
+int nbBoot = 0;
+
+unsigned int indice = 0;
+uint32_t freePreviousLoop = 0;
+int memleak = 0;
+int memUsed = 0;
+int lastMemUsed = 0;
+void trackMemLeaksSetup()
 {
-  return (_SettingsData.tag != MAGIC);
+  freePreviousLoop = ESP.getFreeHeap();
+  memleak = 0;
+  memUsed = 0;
+}
+void trackMemLeaksLoop()
+{
+  uint32_t freeHeap = ESP.getFreeHeap();
+  memleak = freeHeap - freePreviousLoop;
+  memUsed += memleak;
+  freePreviousLoop = freeHeap;
+  if (++indice > 10000)
+  {
+    // MAIN_DEBUG_MSG("%d\n",indice);
+    if (lastMemUsed != memUsed)
+    {
+      m_ws.printfAll("{ \"memUsed\" : %d }", -memUsed);
+      lastMemUsed = memUsed;
+    }
+    indice = 0;
+  }
+}
+
+unsigned long lastBlinkTime = 0;
+unsigned long blinkdelay = 0;
+boolean blinkOn = false;
+#define LED D4
+#define FOURTHBYSECOND 225
+#define TWICEBYSECOND 475
+#define ONEBYSECOND 975
+#define ONEBY10SECONDS 9975
+#define TWICEBYMINUTE 29975
+void blinkSetup()
+{
+  pinMode(LED, OUTPUT);
+}
+void blinkLoop()
+{
+  unsigned long now = millis();
+  if ((now - lastBlinkTime) > blinkdelay)
+  {
+    lastBlinkTime = now;
+    blinkOn = !blinkOn;
+    int duration = 25;
+    if ((WiFi.getMode() == WIFI_AP_STA))
+    {
+      duration = FOURTHBYSECOND;
+    }
+    else if ((WiFi.getMode() & WIFI_AP) == WIFI_AP)
+    {
+      duration = TWICEBYSECOND;
+    }
+    else if ((WiFi.getMode() & WIFI_STA) == WIFI_STA)
+    {
+      duration = WiFi.isConnected() ? TWICEBYMINUTE : ONEBYSECOND;
+    }
+
+    // MAIN_DEBUG_MSG("Mqtt%sconnected\n",POWERMETERBOARD.isMqttConnected()?" ":" not ");
+    // MAIN_DEBUG_MSG("duration %d",duration);
+    blinkdelay = blinkOn ? 25 : duration; // + (blinkOn ? 0 : duration);
+    // MAIN_DEBUG_MSG("%s %lu\n",blinkOn?"HIGH":"LOW",blinkdelay);
+    digitalWrite(LED, blinkOn ? LOW : HIGH);
+  }
+}
+
+// DEBUG INFO
+
+// boolean isSettingsDefined()
+// {
+//   return (_SettingsData.tag == MAGIC);
+// }
+
+String stringProcessor(const String &var)
+{
+  MAIN_DEBUG_MSG("stringProcessor %s\n", var.c_str());
+  if (var == "RELEASE")
+  {
+    return String(BUILD_VERSION_STRING);
+  }
+  if (var == "BOOT")
+  {
+    return String(nbBoot);
+  }
+  else if (var == "USEDMEM")
+  {
+    return String(-memUsed);
+  }
+  return "";
 }
 
 WiFiEventHandler gotIpEventHandler, disconnectedEventHandler;
-
 void setup()
 {
-  MAIN_DEBUG_INIT(9600);
-  MAIN_DEBUG_MSG("\n");
+  DEBUG_INIT(9600);
+  delay(200);
+  MAIN_DEBUG_MSG("Setup\n");
+
+  trackMemLeaksSetup();
 
   /**************************/
   /* Persistance Management */
   /*    Memory allocation   */
   /**************************/
+  // _SettingsPersistanceIndex = EEPROMEX.allocate(sizeof(struct settings));
   POWERMETERBOARD.setupPersistance();
   WIFIMANAGER.setupPersistance();
-  _SettingsPersistanceIndex = EEPROMEX.allocate(sizeof(struct settings));
+  m_NbBootPersistanceIndex = EEPROMEX.allocate(sizeof(int));
 
   /**************************/
   /* Persistance Management */
   /*       Activation       */
   /**************************/
   EEPROMEX.begin();
-  EEPROMEX.get(_SettingsPersistanceIndex, _SettingsData);
-  _IsSettingsDirty = false;
-  MAIN_DEBUG_MSG("%setting available\n", isSettingsDefined() ? "S" : "No s");
   /**************************/
+
+  /****************/
+  /* DEBUG REBOOT */
+  /****************/
+  EEPROMEX.get(m_NbBootPersistanceIndex, nbBoot);
+  nbBoot++;
+  EEPROMEX.put(m_NbBootPersistanceIndex, nbBoot);
+  /****************/
 
   /**************************/
   /* Reaction to WIFI event */
   /**************************/
-  gotIpEventHandler = WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP &event) {
-    MAIN_DEBUG_MSG("Station connected, IP: %s\n", WiFi.localIP().toString().c_str());
-    /*******************/
-    /*  Multicast DNS  */
-    /*   Activation    */
-    /*******************/
-    MAIN_DEBUG_MSG("Starting mDNS\n");
-    if (!MDNS.begin("powermetersboard"))
-    {
-      MAIN_DEBUG_MSG("Fails to start mDNS\n");
-    }
-    //Add service to MDNS-SD
-    MDNS.addService("http", "tcp", 80);
-  });
+  gotIpEventHandler = WiFi.onStationModeGotIP(
+      [](const WiFiEventStationModeGotIP &event)
+      {
+        MAIN_DEBUG_MSG("Station connected, IP: %s\n", WiFi.localIP().toString().c_str());
+        /*******************/
+        /*  Multicast DNS  */
+        /*   Activation    */
+        /*******************/
+        MAIN_DEBUG_MSG("Starting mDNS %s\n", PMBNAME);
+        if (!MDNS.begin(PMBNAME))
+        {
+          MAIN_DEBUG_MSG("Fails to start mDNS\n");
+        }
+        else
+        {
+          // Add service to MDNS-SD
+          MDNS.addService("http", "tcp", 80);
+        }
+      });
 
-  disconnectedEventHandler = WiFi.onStationModeDisconnected([](const WiFiEventStationModeDisconnected &event) {
-    MAIN_DEBUG_MSG("Station disconnected\n");
-  });
-  /**************************/
-
-  WIFIMANAGER.setup(&m_WiFiServer, m_fileSystem);
-  POWERMETERBOARD.setup("WH_PowerMeters", m_espClient, "openHabMqttUrl", 8316, &m_WiFiServer, m_fileSystem);
-  // Add service to MDNS-SD
+  disconnectedEventHandler = WiFi.onStationModeDisconnected([](const WiFiEventStationModeDisconnected &event)
+                                                            { MAIN_DEBUG_MSG("Station disconnected\n"); });
+  /****************/
+  /*  WiFiManager */
+  /*  Activation  */
+  /****************/
+  WIFIMANAGER.setup(PMBNAME, &m_WebServer, &m_fileSystem);
 
   /******************/
   /*  OTA services  */
   /*   Activation   */
   /******************/
   // Hostname
-  // ArduinoOTA.setHostname("powermetersboard");
+  // ArduinoOTA.setHostname(PMBNAME);
   // // define authentication by default
   // ArduinoOTA.setPassword((const char *)"1234!");
   // //
@@ -128,49 +219,58 @@ void setup()
 
   if (!WIFIMANAGER.isSettingExist())
   {
+    MAIN_DEBUG_MSG("start as Access point\n");
     // send a file when /index is requested
-    m_WiFiServer.on("/", HTTP_ANY, [](AsyncWebServerRequest *request) { request->redirect("/wifi/setup/"); });
   }
   else
   {
-    m_WiFiServer.serveStatic("/", m_fileSystem, "/").setTemplateProcessor([](const String &var) -> String {
-      MAIN_DEBUG_MSG("main TemplateProcessor");
-      String value = WIFIMANAGER.setupTemplateProcessor(var);
-      if (value.length() == 0)
-      {
-        if (var == "WIFICONNECTIONSTATUS")
+    MAIN_DEBUG_MSG("start as Client\n");
+    POWERMETERBOARD.setup(PMNAME, m_espClient, &m_WebServer, m_fileSystem);
+    m_WebServer.serveStatic("/debug", m_fileSystem, "/debug").setTemplateProcessor([](const String &var) -> String
+                                                                                   {
+        String value = WIFIMANAGER.stringProcessor(var);
+        if (value.length() == 0)
         {
-          return (WiFi.status() != WL_CONNECTED) ? "Not connected" : "Connected";
+          value = POWERMETERBOARD.stringProcessor(var);
+            if (value.length() == 0)
+            {
+              value = stringProcessor(var);
+            }
         }
-        else
-        {
-          return String();
-        }
-      }
-      else
-      {
-        return value;
-      }
-    });
+        return value; });
+    m_WebServer.addHandler(&m_ws);
+    m_ws.enable(true);
   }
-
-  m_WiFiServer.onNotFound([](AsyncWebServerRequest *request) {
-    request->send(404, "text/plain", "Not found");
+  m_WebServer.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/favicon.ico", "image/x-icon");
   });
+  m_WebServer.onNotFound([](AsyncWebServerRequest *request)
+                         { request->send(404, "text/plain", "Not found"); });
 
-  m_WiFiServer.begin();
+  m_WebServer.begin();
+  webserverstarted = true;
+
+  blinkSetup();
+
   MAIN_DEBUG_MSG("Setup ending\n");
 }
 
 void loop()
 {
+  // Browsers sometimes do not correctly close the WebSocket connection explanation from the ESPAsyncWebServer library GitHub page
+  m_ws.cleanupClients();
+
+  trackMemLeaksLoop();
+
   /* OTA */
-  //ArduinoOTA.handle();
+  // ArduinoOTA.handle();
   POWERMETERBOARD.loop();
   WIFIMANAGER.loop();
   MDNS.update();
-  
+
   noInterrupts();
   EEPROMEX.commit();
   interrupts();
+
+  blinkLoop();
 }

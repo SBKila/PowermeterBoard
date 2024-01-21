@@ -1,0 +1,10 @@
+div.scroll {
+    width: 500px;
+    height: 300px;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+div.scroll p {
+    margin-block-end: 0px;
+    margin-block-start: 0px;
+}

@@ -5,99 +5,181 @@
 	<title>PowerMeter</title>
 
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-
 	<link rel="stylesheet" href="./powermeter.css">
-	<link rel="stylesheet" href="./jquery.mobile.min.css">
-	<!-- <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.5/jquery.mobile.min.css">
-	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.2/dist/jquery.validate.min.js"></script>
-	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquerymobile/1.4.5/jquery.mobile.min.js"></script> -->
-	<link rel="apple-touch-icon" sizes="57x57" href="./apple-icon-57.png">
-	<link rel="apple-touch-icon" sizes="60x60" href="./apple-icon-60.png">
-	<link rel="apple-touch-icon" sizes="72x72" href="./apple-icon-72.png">
-	<link rel="apple-touch-icon" sizes="76x76" href="./apple-icon-76.png">
-	<link rel="apple-touch-icon" sizes="114x114" href="./apple-icon-114.png">
-	<link rel="apple-touch-icon" sizes="120x120" href="./apple-icon-120.png">
-	<link rel="apple-touch-icon" sizes="144x144" href="./apple-icon-144.png">
-	<link rel="apple-touch-icon" sizes="152x152" href="./apple-icon-152.png">
-	<link rel="apple-touch-icon" sizes="180x180" href="./apple-icon-180.png">
-	<link rel="icon" type="image/png" sizes="192x192" href="./android-icon-192.png">
-	<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
-	<link rel="icon" type="image/png" sizes="96x96" href="./favicon-96.png">
-	<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png">
-	<link rel="manifest" href="./manifest.json">
-	<meta name="msapplication-TileColor" content="#ffffff">
-	<meta name="msapplication-TileImage" content="./ms-icon-144.png">
-	<meta name="theme-color" content="#ffffff">
+	<link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+	<script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+	<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
 </head>
 
 <body>
-
 	<div data-role="page" id="landing">
-
 		<div data-role="header">
-			<h1>Power Meter Overview</h1>
+			<h1>Powermeter Overview</h1>
 		</div><!-- /header -->
-	
 		<div role="main" class="ui-content">
-			<div data-role="header">
-				<h1>MQTT server </h1>
-				<a data-icon="gear" class="ui-btn-right" data-iconpos="notext"></a>
+			<div data-role="header" data-mini="true">
+				<h2>Home assistant</h2>
+				<a data-icon="carat-d" class="ui-btn-left" data-iconpos="notext" id="btn-ha"></a>
 			</div>
-			<div class="ui-nodisc-icon">
-				<p>NODENAME:%NODENAME%</p>
-				<p>Url:%MQTTURL%</p>
-				<p>Port:%MQTTPORT%</p>
-				<p>Login:%MQTTLOGIN%</p>
-				<p>Status:%MQTTCONNECTIONSTATUS%</p>
-				<!-- Class added to the wrapper -->
-				<div class="ui-btn ui-shadow ui-corner-all ui-icon-delete ui-btn-icon-notext ui-btn-b ui-btn-inline">Delete</div>
-				<a class="ui-btn ui-shadow ui-corner-all ui-icon-plus ui-btn-icon-notext ui-btn-b ui-btn-inline">Plus</a>
-				<a class="ui-btn ui-shadow ui-corner-all ui-icon-minus ui-btn-icon-notext ui-btn-b ui-btn-inline">Minus</a>
-				<a class="ui-btn ui-shadow ui-corner-all ui-icon-check ui-btn-icon-notext ui-btn-b ui-btn-inline">Check</a>
+			<div data-role="main" class="ui-content">
+				<form id="hapanel" style="display: none"></formid>
+					<div class="ui-field-contain">
+						<label for="nodename">Device name:</label>
+						<input type="text" id="nodename" value="`NODENAME`" disabled="disabled">
+					</div>
+				</form>
 			</div>
-		</div>
-
-		<div role="main" class="ui-content">
+			<div data-role="header" data-mini="true">
+				<span id="wifisumup" class="sumup ui-left"></span>
+				<h2>Wifi</h2>
+				<a data-icon="carat-d" class="ui-btn-left" data-iconpos="notext" id="btn-wifi"></a>
+			</div>
+			<div data-role="main" class="ui-content">
+				<form id="wifipanel" style="display: none">
+					<div class="ui-grid-a">
+						<div class="ui-block-a">
+							<div class="ui-field-contain">
+								<label for="ssid">SSID:</label>
+								<input type="text" id="ssid" value="" disabled="disabled">
+							</div>
+						</div>
+						<div class="ui-block-b">
+							<div class="ui-field-contain">
+								<label for="channel">channel:</label>
+								<input type="text" id="channel" value="" disabled="disabled">
+							</div>
+						</div>
+					</div>
+					<div class="ui-grid-a">
+						<div class="ui-block-a">
+							<div class="ui-field-contain">
+								<label for="rssi">strength:</label>
+								<input type="text" id="rssi" value="" disabled="disabled">
+							</div>
+						</div>
+						<div class="ui-block-b">
+							<div class="ui-field-contain">
+								<label for="status">status:</label>
+								<input type="text" id="status" value="" disabled="disabled">
+							</div>
+						</div>
+					</div>
+					<div class="ui-grid-a">
+						<div class="ui-block-a">
+							<div class="ui-field-contain">
+								<label for="ip">Ip:</label>
+								<input type="text" id="ip" value="" disabled="disabled">
+							</div>
+						</div>
+						<div class="ui-block-b">
+							<div class="ui-field-contain">
+								<label for="host">host:</label>
+								<input type="text" id="host" value="" disabled="disabled">
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div data-role="header" data-mini="true">
+				<span id="mqttsumup" class="sumup"></span>
+				<h2>MQTT server</h2>
+				<a data-icon="carat-d" class="ui-btn-left" data-iconpos="notext" id="btn-mqtt"></a>
+				<a data-icon="gear" class="ui-btn-right" data-iconpos="notext" href="#setMQTT"></a>
+			</div>
+			<div data-role="main" class="ui-content" >
+				<form id="mqttpanel" style="display: none">
+					<div class="ui-field-contain">
+						<label for="mqtturl">MQTT Server:</label>
+						<input type="text" name="text-1" id="mqtturl" value="mqtt://`MQTTDOMAIN`:`MQTTPORT`"
+							disabled="disabled">
+					</div>
+					<div class="ui-field-contain">
+						<label for="mqttlogin">Login:</label>
+						<input type="text" name="text-1" id="mqttlogin" value="`MQTTLOGIN`" disabled="disabled">
+					</div>
+					<div class="ui-field-contain">
+						<label for="mqttpwd">Password:</label>
+						<input type="text" name="text-1" id="mqttpwd" value="`MQTTPWD`" disabled="disabled">
+					</div>
+					<div class="ui-field-contain">
+						<label for="mqttstatus">Status:</label>
+						<input type="text" name="text-1" id="mqttstatus" value="``MQTTCONNECTIONSTATUS``"
+							disabled="disabled">
+					</div>
+				</form>
+			</div>
 			<div data-role="header">
-				<h1>Powereters</h1>
+				<h2>Powereters</h2>
 				<a href="#addPM" data-icon="plus" class="ui-btn-right" data-iconpos="notext">add</a>
 			</div>
 			<div data-role="collapsible-set" data-theme="c" data-content-theme="d" id='powermeterslist'>
 			</div>
-		</div><!-- /content -->
-
+			<!-- <div class="ui-grid-a ui-responsive">
+				<div class="ui-block-a"><input id="btn-reload" type="button" data-icon="recycle" value="Reload"
+						data-iconpos="bottom"></div>
+				<div class="ui-block-b"><input id="btn-upload" type="button" data-icon="action" value="Upload"
+						data-iconpos="bottom" disabled></div>
+			</div> -->
+		</div>
 		<div id="footer" data-role="footer">
-			<img class="logo" src="./KPLogo.svg">
+			<embed class="logo" src="./KPLogo.svg">
 		</div><!-- /footer -->
 	</div><!-- /page -->
-
+	<div data-role="page" id="setMQTT">
+		<form id="setMQTTForm">
+			<div class="ui-field-contain">
+				<label for="mqtt_url">Url:</label>
+				<input type="text" name="mqtt_url" value="" id="mqtt_url" value="%MQTTURL%">
+			</div>
+			<div class="ui-field-contain">
+				<label for="mqtt_port">Port:</label>
+				<input type="number" name="mqtt_port" value="" id="mqtt_port" value="%MQTTPORT%">
+			</div>
+			<div class="ui-field-contain">
+				<label for="mqtt_login">Login:</label>
+				<input type="text" name="mqtt_login" value="" id="mqtt_login" value="%MQTTLOGIN%">
+			</div>
+			<div class="ui-field-contain">
+				<label for="mqtt_pwd">Login:</label>
+				<input type="text" name="mqtt_pwd" value="" id="mqtt_pwd" value="%MQTTPWD%">
+			</div>
+			<div data-role="navbar" data-iconpos="bottom">
+				<ul>
+					<li><a href="#landing" data-icon="delete">Cancel</a></li>
+					<li><button id="mqttssubmit" type="submit" data-icon="action" class="ui-btn-active">Save</button>
+					</li>
+				</ul>
+			</div>
+		</form>
+	</div>
 	<div data-role="page" id="addPM">
 		<div data-role="header">
 			<h1>Add new Power Meter</h1>
 		</div><!-- /header -->
 		<div role="main" class="ui-content">
-			<form id="createPMForm" method="POST" url="/powermerter">
-				<label for="pm_ref">Reference:</label>
-				<select name="pm_ref" id="pm_ref" data-native-menu="false">
+			<form id="createPMForm">
+				<label for="createPMForm_dIO">Reference:</label>
+				<select name="dIO" id="createPMForm_dIO" data-native-menu="false">
 					<option value="">Choices connector:</option>
-					<option value="1">PowerMeter 1</option>
-					<option value="2">PowerMeter 2</option>
-					<option value="3">PowerMeter 3</option>
-					<option value="4">PowerMeter 4</option>
-					<option value="5">PowerMeter 5</option>
-					<option value="6">PowerMeter 6</option>
-					<option value="7">PowerMeter 7</option>
-					<option value="8">PowerMeter 8</option>
-					<option value="9">PowerMeter 9</option>
-					<option value="10">PowerMeter 10</option>
+					<option value="0">PowerMeter 1</option>
+					<option value="4">PowerMeter 2</option>
+					<option value="5">PowerMeter 3</option>
+					<option value="14">PowerMeter 4</option>
+					<option value="12">PowerMeter 5</option>
+					<option value="13">PowerMeter 6</option>
+					<option value="15">PowerMeter 7</option>
+					<option value="3">PowerMeter 8</option>
+					<option value="1">PowerMeter 9</option>
+					<option value="2">PowerMeter 10</option>
 				</select>
-				<label for="pm_name">Name:</label>
-				<input type="text" name="pm_name" value="" id="pm_name">
-				<label for="pm_nbtick">Impuls by kW:</label>
-				<input type number name="pm_nbtick" value="">
-				<label for="pm_voltage">Nominal voltage:</label>
-				<select name="pm_voltage" id="pm_voltage" data-native-menu="false">
+				<label for="createPMForm_name">Name:</label>
+				<input type="text" name="name" value="" id="createPMForm_name">
+				<label for="createPMForm_nbTickByKW">Impuls by kW:</label>
+				<input type="number" name="nbTickByKW" value="" id="createPMForm_nbTickByKW">
+
+				<label for="createPMForm_voltage">Nominal voltage:</label>
+				<select name="voltage" id="createPMForm_voltage" data-native-menu="false">
 					<option value="">Power suply voltage:</option>
 					<option value="230">230</option>
 					<option value="220">220</option>
@@ -105,21 +187,63 @@
 					<option value="110">110</option>
 					<option value="120">120</option>
 				</select>
-				<label for="pm_maxamp">Max amp:</label>
-				<input name="pm_maxamp" pattern="[0-9]*" value="">
-				<input data-role="submit" type="submit" value="Add"
-					class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-plus">
-				<input data-role="cancel" value="Cancel"
-					class="ui-btn ui-btn-inline ui-corner-all ui-btn-icon-left ui-icon-plus">
+				<label for="createPMForm_maxAmp">Max amp:</label>
+				<input name="maxAmp" pattern="[0-9]*" value="" id="createPMForm_maxAmp">
+				<label for="createPMForm_cumulative">Current value:</label>
+				<input name="cumulative" pattern="[0-9]*" value="0" id="createPMForm_cumulative">
+				<input data-role="submit" type="submit" value="Add" class="ui-btn ui-corner-all">
+				<a href="#" class="ui-btn ui-corner-all" data-rel="back">Cancel</a>
 			</form>
 		</div>
 		<div id="footer" data-role="footer">
-			<img class="logo" src="./KPLogo.svg">
+			<embed class="logo" src="./KPLogo.svg">
 		</div><!-- /footer -->
 	</div>
-	<script type="text/javascript" src="./jquery.min.js"></script>
-	<script type="text/javascript" src="./jquery.validate.min.js"></script>
-	<script type="text/javascript" src="./jquery.mobile.min.js"></script>
+	<div data-role="page" id="editPM">
+		<div data-role="header">
+			<h1>Edit Power Meter</h1>
+		</div><!-- /header -->
+		<div role="main" class="ui-content">
+			<form id="editPMForm">
+				<div class="ui-field-contain">
+					<label for="editpm_ref">Reference:</label>
+					<input readonly type="text" name="pmref" value="" id="editpm_ref">
+				</div>
+				<div class="ui-field-contain">
+					<label for="editpm_name">Name:</label>
+					<input readonly type="text" name="name" value="" id="editpm_name">
+				</div>
+				<div class="ui-field-contain">
+					<label for="editpm_nbtick">Impuls by kW:</label>
+					<input type="number" name="nbTickByKW" id="editpm_nbtick" value="">
+				</div>
+				<div class="ui-field-contain">
+					<label for="editpm_voltage">Nominal voltage:</label>
+					<select name="voltage" id="editpm_voltage" data-native-menu="false">
+						<option value="">Power suply voltage:</option>
+						<option value="230">230</option>
+						<option value="220">220</option>
+						<option value="240">240</option>
+						<option value="110">110</option>
+						<option value="120">120</option>
+					</select>
+				</div>
+				<div class="ui-field-contain">
+					<label for="editpm_maxamp">Max amp:</label>
+					<input name="maxAmp" id="editpm_maxamp" pattern="[0-9]*" value="">
+				</div>
+				<div class="ui-field-contain">
+					<label for="editpm_value">Current value:</label>
+					<input name="cumulative" id="editpm_value" pattern="[0-9]*" value="0">
+				</div>
+				<input data-mini="true" data-role="submit" type="submit" value="Update" class="ui-btn ui-corner-all">
+				<a href="#" class="ui-btn ui-corner-all ui-mini" data-rel="back">Cancel</a>
+			</form>
+		</div>
+		<div id="footer" data-role="footer">
+			<embed class="logo" src="./KPLogo.svg">
+		</div><!-- /footer -->
+	</div>
 	<script type="text/javascript" src="./index.js"></script>
 </body>
 

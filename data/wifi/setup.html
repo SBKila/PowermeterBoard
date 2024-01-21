@@ -10,8 +10,12 @@
 
 <body>
     <h2>WIFI Setup</h2>
-    <p id="lstSSID">scanning WIFI ...</p>
+    <p id="lstSSID">
+        <input type="button" value="scan WiFi" />
+    </p>
     <form id="form-wifi">
+        <fieldset>
+            <legend>Settings:</legend>
         <p>
             <label for="ssid-name">WiFi name (1 to 32 characters):</label>
             <input type="text" id="ssid-name" name="ssid-name" minlength="1" maxlength="32" size="32"
@@ -19,11 +23,12 @@
         </p>
         <p>
             <label for="ssid-pwd">WiFi password (0 to 63 characters):</label>
-            <input type="password" id="ssid-pwd" name="ssid-pwd" minlength="0" maxlength="63" size="32">
+            <input type="text" id="ssid-pwd" name="ssid-pwd" minlength="0" maxlength="63" size="32">
         </p>
         <p>
             <input type="button" id="btn-save-settings" value="Submit">
         </p>
+    </fieldset>
     </form>
 </body>
 

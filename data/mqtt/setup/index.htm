@@ -1,0 +1,37 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <title>MQTT Setup</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script type="text/javascript" src="/jquery.min.js"></script>
+    <script type="text/javascript" src="./setup.js"></script>
+</head>
+
+<body>
+    <h2>WIFI Setup</h2>
+    <form id="form-mqtt">
+        <p>
+            <label for="mqtt_domain">Domain name:</label>
+            <input type="text" name="mqtt_domain" id="mqtt_domain" value="`MQTTDOMAIN`">
+        </p>
+        <p>
+            <label for="mqtt_port">Port:</label>
+            <input type="number" name="mqtt_port" id="mqtt_port" value="`MQTTPORT`">
+        </p>
+        <p>
+            <label for="mqtt_login">Login:</label>
+            <input type="text" name="mqtt_login" id="mqtt_login" value="`MQTTLOGIN`">
+        </p>
+        <p>
+            <label for="mqtt_pwd">Password:</label>
+            <input type="secret" name="mqtt_pwd" id="mqtt_pwd" value="">
+        </p>
+        </div>
+        <p>
+            <input type="button" id="btn-save-settings" value="Submit">
+        </p>
+    </form>
+</body>
+
+</html>

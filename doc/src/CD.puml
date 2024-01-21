@@ -1,0 +1,10 @@
+@startuml
+participant PowermeterBoard as pb
+participant AsynWebSocket as ws
+
+[-> pb: _broadcastEvent
+pb -> pb: allocate 1024 json doc
+pb -> pb: update json doc
+pb -> pb: convert to string
+pb -> ws: sent text
+@enduml
