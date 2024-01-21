@@ -10,20 +10,21 @@
 </head>
 
 <body>
-    <h2>Status</h2>
-    <p>NodeName: `NODENAME`</p>
-    <p>WIFI</p>
-    <p>SSID: `SSIDNAME` - `WIFICONNECTIONSTATUS` - `WIFIRSSI` db</p>
-    <p>Network</p>
-    <p>IP: `WIFINETWORKIP`</p>
-    <p>Messaging</p>
-    <p>MQTT: `MQTTLOGIN`:mqtt://`MQTTDOMAIN`:`MQTTPORT` - `MQTTCONNECTIONSTATUS`</p>
-    <p>DEBUG</p>
-    <p>Nb boot: `BOOT`</p>
-    <p>Used Mem: <span id="memUsed">`USEDMEM`</span></p>
-    <div class="scroll" id="lastlog">
-    </div>
-    
+    <h2>DEBUG INFO</h2>
+    <fieldset>
+        <legend>General</legend>
+        <p>Release: `RELEASE`</p>
+        <p>NodeName: `NODENAME`</p>
+        <p>Nb boot: `BOOT`</p>
+        <p>Used Mem: <span id="memUsed">`USEDMEM`</span></p>
+    </fieldset>
+    <fieldset>
+        <legend>Network</legend>
+        <p>SSID: `SSIDNAME` - `WIFICONNECTIONSTATUS` - `WIFIRSSI` db</p>
+        </hr>
+        <p>IP: `WIFINETWORKIP`</p>
+        <p>MQTT: `MQTTLOGIN`:mqtt://`MQTTDOMAIN`:`MQTTPORT` - `MQTTCONNECTIONSTATUS`</p>
+    </fieldset>
     <script type="text/javascript" src="./debug/index.js"></script>
 </body>
 
