@@ -88,7 +88,10 @@ $("#addPM").on("pagecreate", function () {
           contentType: "application/json",
           dataType: "json",
           success: function (data, textStatus, jqXHR) {
-            _appendNewPowermeterDisplay(data);
+            if (!_isPMSettings(data.dIO)) {
+              _addPMSettings(data);
+            }
+            //_appendNewPowermeterDisplay(data);
             $("#powermeterslist").collapsibleset('refresh');
             $.mobile.changePage("#landing");
           },
@@ -170,12 +173,12 @@ $("#editPM").on("pagecreate", function () {
   );
 });
 
-$("#btn-reload").on("click", () => {
-  _downloadSettings();
-});
-$("#btn-upload").on("click", () => {
-  _uploadSettings();
-});
+// $("#btn-reload").on("click", () => {
+//   _downloadSettings();
+// });
+// $("#btn-upload").on("click", () => {
+//   _uploadSettings();
+// });
 
 $('body').on('click', 'a[pmedittarget]', function () {
   var pm = $(this).attr("pmedittarget");
@@ -194,10 +197,14 @@ $('body').on('click', 'a[pmedittarget]', function () {
 $('body').on('click', 'a[pmdeletetarget]', function () {
   var target = dioToPmReference[$(this).attr("pmdeletetarget")];
   console.log("delete PM" + target);
-  _deletePM(target-1);
+  _deletePM(target - 1);
   //_removePMSettings(target);
 });
 
+$("#btn-ha").on("click", () => {
+  $('#btn-ha').buttonMarkup({ icon: "carat-" + ($('#hapanel').is(":visible") ? "d" : "u") });
+  $('#hapanel').toggle();
+});
 $("#btn-wifi").on("click", () => {
   $('#btn-wifi').buttonMarkup({ icon: "carat-" + ($('#wifipanel').is(":visible") ? "d" : "u") });
   $('#wifipanel').toggle();
@@ -244,23 +251,23 @@ function _downloadSettings(data, textStatus, jqXHR) {
   });
 
 };
-function _uploadSettings() {
-  $("#btn-upload").button('disable');
-  $.ajax({
-    type: "PUT",
-    url: "./pm",
-    data: JSON.stringify(pmSettings),
-    contentType: "application/json",
-    dataType: "json",
-    success: function (data, textStatus, jqXHR) {
-    },
-    //   error: function (data, textStatus, jqXHR) {
-    //     //process error msg
-    //     $.mobile.changePage("#landing");
-    //   }
-  });
+// function _uploadSettings() {
+//   $("#btn-upload").button('disable');
+//   $.ajax({
+//     type: "PUT",
+//     url: "./pm",
+//     data: JSON.stringify(pmSettings),
+//     contentType: "application/json",
+//     dataType: "json",
+//     success: function (data, textStatus, jqXHR) {
+//     },
+//     //   error: function (data, textStatus, jqXHR) {
+//     //     //process error msg
+//     //     $.mobile.changePage("#landing");
+//     //   }
+//   });
 
-}
+// }
 function _updatePMSettings(data) {
   let convertedData = {};
   Object.entries(data).forEach((entry) =>
@@ -270,6 +277,13 @@ function _updatePMSettings(data) {
   $("#btn-upload").button('enable');
   _replacePowermeterDisplay(data);
 }
+function _isPMSettings(dio) {
+  return pmSettings.reduce(
+    (accumulator, currentValue) => (currentValue.dIO == dio) || accumulator,
+    false,
+  );
+}
+
 function _addPMSettings(data) {
   let convertedData = {};
   Object.entries(data).forEach((entry) =>
@@ -286,10 +300,10 @@ function _deletePM(pmIndex) {
     url: "./pm/" + pmIndex,
     contentType: "application/json",
     success: function (data, textStatus, jqXHR) {
-      // _removePowermeterDisplay(pmIndex);
-      // isSettingsDirty = true;
-      // $("#powermeterslist").collapsibleset('refresh');
-      // $.mobile.changePage("#landing");
+      const dio = pmReferenceToDio[pmIndex+1];
+      if (_isPMSettings(dio)) {
+        _removePMSettings(dio);
+      }
     },
     error: function (data, textStatus, jqXHR) {
       alert("failure");
@@ -391,8 +405,8 @@ function _appendNewPowermeterDisplay(element, index) {
   if (selectPmSelectInitialized) $("select#createPMForm_dIO").selectmenu("refresh", true);
   $("#powermeterslist").collapsibleset('refresh');
 }
-const dioToPmReference = [1, 9, 10, 8, 2, 255, 255, 255, 255, 255, 255, 255, 5, 6, 4, 7, 3];
-const pmReferenceToDio = [255, /*PM1 D3*/0, /*PM2 D2*/4, /*PM3 D1*/16, /*PM4 D5*/14, /*PM5 D6*/12, /*PM6 D7*/13, /*PM7 D8*/15, /*PM8 D9*/3, /*PM9 D10*/1, /*PM10 D4*/2];
+const dioToPmReference = [1, 9, 10, 8, 2, 3, 255, 255, 255, 255, 255, 255, 5, 6, 4, 7, 255];
+const pmReferenceToDio = [255, /*PM1 D3*/0, /*PM2 D2*/4, /*PM3 D1*/5, /*PM4 D5*/14, /*PM5 D6*/12, /*PM6 D7*/13, /*PM7 D8*/15, /*PM8 D9*/3, /*PM9 D10*/1, /*PM10 D4*/2];
 
 $("#landing").on("pageinit", function (event) {
   _downloadSettings();
@@ -405,13 +419,20 @@ $(document).ready(function () {
   ws.onmessage = function (evt) {
     var pmdEvent = JSON.parse(evt.data);
     console.log("WS:Received Message: " + evt.data);
-    if (pmdEvent.type === "pmd"){
-      _removePowermeterDisplay(pmReferenceToDio[pmdEvent.datas+1]);
+    if (pmdEvent.type === "pmd") {
+      const dio = pmReferenceToDio[pmdEvent.datas + 1];
+      if (_isPMSettings(dio)) {
+        _removePMSettings(dio);
+      }
     }
     if ((pmdEvent.type === "pdu") && (pmdEvent.datas)) {
       pmdEvent.datas.forEach(function (element) {
-        $("#cumulative" + element.dIO).html(element.cumulative);
-        $("#ticks" + element.dIO).val(element.ticks);
+        if (!_isPMSettings(element.dIO)) {
+          _addPMSettings(element);
+        } else {
+          $("#cumulative" + element.dIO).html(element.cumulative);
+          $("#ticks" + element.dIO).val(element.ticks);
+        }
       })
       return;
     }

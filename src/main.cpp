@@ -33,7 +33,7 @@ int _SettingsPersistanceIndex;
 int m_NbBootPersistanceIndex = 0;
 int nbBoot = 0;
 
-// unsigned int indice = 0;
+unsigned int indice = 0;
 uint32_t freePreviousLoop = 0;
 int memleak = 0;
 int memUsed = 0;
@@ -50,17 +50,16 @@ void trackMemLeaksLoop()
   memleak = freeHeap - freePreviousLoop;
   memUsed += memleak;
   freePreviousLoop = freeHeap;
-  // if (++indice > 10000)
-  // {
-  // MAIN_DEBUG_MSG("%d\n",indice);
-  if (lastMemUsed != memUsed)
+  if (++indice > 10000)
   {
-    m_ws.printfAll("{ \"memUsed\" : %d }", -memUsed);
-    // WebSerial.printf("Free heap=[%u]\n", ESP.getFreeHeap());
-    lastMemUsed = memUsed;
+    // MAIN_DEBUG_MSG("%d\n",indice);
+    if (lastMemUsed != memUsed)
+    {
+      m_ws.printfAll("{ \"memUsed\" : %d }", -memUsed);
+      lastMemUsed = memUsed;
+    }
+    indice = 0;
   }
-  //   indice = 0;
-  // }
 }
 
 unsigned long lastBlinkTime = 0;
@@ -105,8 +104,6 @@ void blinkLoop()
   }
 }
 
-
-
 // DEBUG INFO
 
 // boolean isSettingsDefined()
@@ -117,6 +114,10 @@ void blinkLoop()
 String stringProcessor(const String &var)
 {
   MAIN_DEBUG_MSG("stringProcessor %s\n", var.c_str());
+  if (var == "RELEASE")
+  {
+    return String(BUILD_VERSION_STRING);
+  }
   if (var == "BOOT")
   {
     return String(nbBoot);
@@ -240,7 +241,9 @@ void setup()
     m_WebServer.addHandler(&m_ws);
     m_ws.enable(true);
   }
-
+  m_WebServer.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/favicon.ico", "image/x-icon");
+  });
   m_WebServer.onNotFound([](AsyncWebServerRequest *request)
                          { request->send(404, "text/plain", "Not found"); });
 
@@ -251,8 +254,6 @@ void setup()
 
   MAIN_DEBUG_MSG("Setup ending\n");
 }
-
-
 
 void loop()
 {

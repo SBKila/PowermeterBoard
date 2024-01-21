@@ -90,9 +90,9 @@ public:
                     m_PowermeterDatasPersistance[powermeterIndex].ticks = powermeterValues.ticks;
                     m_PowermeterDatasPersistance[powermeterIndex].cumulative = powermeterValues.cumulative;
                 }
-                if (_addPowermeter(powermeterDef, powermeterValues))
+                if (_addPowermeter(powermeterDef, powermeterValues, true))
                 {
-                    request->send(200, "application/json", _getPowermeterAsJsonString(powermeterDef));
+                    request->send(200, "application/json", _getPowermeterAsJsonString(powermeterDef,powermeterValues));
                 }
                 else
                 {
@@ -169,22 +169,19 @@ public:
                 {
                     PWBOARD_DEBUG_MSG("data is object\n");
                     const JsonObject &jsonObj = json.as<JsonObject>();
-                    PWBOARD_DEBUG_MSG("1\n");
                     PowermeterDef powermeterDef;
                     strncpy(powermeterDef.name, jsonObj["name"], 25);
-                    PWBOARD_DEBUG_MSG("2\n");
                     powermeterDef.maxAmp = jsonObj["maxAmp"];
                     powermeterDef.nbTickByKW = jsonObj["nbTickByKW"];
                     powermeterDef.voltage = jsonObj["voltage"];
                     powermeterDef.dIO = (int)jsonObj["dIO"];
-                    PWBOARD_DEBUG_MSG("3\n");
                     DDS238Data powermeterValues;
                     powermeterValues.ticks = 0;
                     powermeterValues.cumulative = jsonObj["cumulative"];
 
-                    if (_addPowermeter(powermeterDef, powermeterValues))
+                    if (_addPowermeter(powermeterDef, powermeterValues, true))
                     {
-                        request->send(200, "application/json", _getPowermeterAsJsonString(powermeterDef));
+                        request->send(200, "application/json", _getPowermeterAsJsonString(powermeterDef,powermeterValues));
                     }
                     else
                     {
@@ -216,7 +213,7 @@ public:
                     this->_broadcastPowerMeterRemoved(powermeterIndex, NULL);
             });
     };
-    void setupHandlerSetListPMs(const char *deviceName, Client &pEthClient, AsyncWebServer *p_pWebServer, fs::FS fs)
+    void setupHandlerGetPowerMeters(const char *deviceName, Client &pEthClient, AsyncWebServer *p_pWebServer, fs::FS fs)
     {
         p_pWebServer->on(
             "/pmb/pm",
@@ -227,17 +224,13 @@ public:
                 AsyncResponseStream *response = request->beginResponseStream("application/json");
 #ifdef ARDUINOJSON_6_COMPATIBILITY
                 DynamicJsonDocument doc(1024);
-            // create an object
-//                JsonObject obj = doc.to<JsonObject>();
 #else
                 JsonDocument doc;
-//                JsonObject obj = doc.to<JsonObject>();
 #endif
                 boolean atleastone = false;
                 for (int i = 0; i < 10; i++)
                 {
                     Powermeter *pPowerMeter = this->m_Powermeters[i];
-
                     // PWBOARD_DEBUG_MSG("(%d,%d),", i, (NULL != pPowerMeter) ? pPowerMeter->getDefinition().dIO : -1);
                     if (NULL != pPowerMeter)
                     {
@@ -251,8 +244,6 @@ public:
                         _fillPMDatatoJson(pPowerMeter->getDefinition().dIO, obj);
                     }
                 }
-                // PWBOARD_DEBUG_MSG("\n");
-
                 if (atleastone)
                 {
                     serializeJson(doc, *response);
@@ -301,7 +292,7 @@ public:
         setupHandlerSetMqtt(deviceName, pEthClient, p_pWebServer, fs);
 
         // Get list of configured powermeter
-        setupHandlerSetListPMs(deviceName, pEthClient, p_pWebServer, fs);
+        setupHandlerGetPowerMeters(deviceName, pEthClient, p_pWebServer, fs);
 
         setupHandlerUpdatePowerMeter(deviceName, pEthClient, p_pWebServer, fs);
         setupHandlerAddPowerMeter(deviceName, pEthClient, p_pWebServer, fs);
@@ -377,7 +368,7 @@ public:
             // if powermeter is defined
             if (storedPowerMeterDefinitions[i].dIO != 255)
             {
-                _addPowermeter(storedPowerMeterDefinitions[i], m_PowermeterDatasPersistance[i]);
+                _addPowermeter(storedPowerMeterDefinitions[i], m_PowermeterDatasPersistance[i], false);
             }
         }
 
@@ -498,20 +489,21 @@ public:
             return String(m_PowermeterBoardSettings.mqtt_pwd);
         if (variable == "MQTTCONNECTIONSTATUS")
             return (m_pPowerMeterDevice && m_pPowerMeterDevice->isMqttconnected()) ? "Connected" : "Disconnected";
-
         return "";
     };
     boolean isMqttConnected() { return isMqttconnected; };
 
 private:
+    void _fillValuestoJson(DDS238Data values, JsonObject &obj){
+        char buffer[25];
+        dtostrf(values.cumulative, 2, 1, buffer);
+        //PWBOARD_DEBUG_MSG("_fillPMDatatoJson cumul float %0.1lf\n", m_PowermeterDatasPersistance[index].cumulative);
+        obj["cumulative"] = buffer;
+        obj["ticks"] = values.ticks;
+    }
     void _fillPMDatatoJson(int index, JsonObject &obj)
     {
-        // PWBOARD_DEBUG_MSG("_fillPMDatatoJson index %d\n", index);
-        // PWBOARD_DEBUG_MSG("_fillPMDatatoJson cumul float %f\n", m_PowermeterDatasPersistance[index].cumulative);
-        int cumul = (int)(m_PowermeterDatasPersistance[index].cumulative * 10 + 0.5) / 10;
-        // PWBOARD_DEBUG_MSG("_fillPMDatatoJson cumul decimal %d\n", cumul);
-        obj["cumulative"] = cumul;
-        obj["ticks"] = m_PowermeterDatasPersistance[index].ticks;
+        _fillValuestoJson(m_PowermeterDatasPersistance[index],obj);
     }
     void _fillDefinitionToJson(int index, JsonObject &obj)
     {
@@ -529,7 +521,7 @@ private:
         obj["voltage"] = powermeterDef.voltage;
         obj["maxAmp"] = powermeterDef.maxAmp;
     }
-    String _getPowermeterAsJsonString(PowermeterDef powermeterDef)
+    String _getPowermeterAsJsonString(PowermeterDef powermeterDef, DDS238Data powermeterValues)
     {
         String response;
 
@@ -543,7 +535,8 @@ private:
         JsonObject obj = doc.to<JsonObject>();
 #endif
         _fillDefinitionToJson(powermeterDef, obj);
-        _fillPMDatatoJson(powermeterDef.dIO, obj);
+        _fillValuestoJson(powermeterValues,obj);
+        //_fillPMDatatoJson(powermeterDef.dIO, obj);
         serializeJson(obj, response);
         return response;
     }
@@ -577,7 +570,7 @@ private:
             powermeterValues.tag = m_PowermeterDatasPersistance[powermeterIndex].tag;
 
             _removePowermeter(powermeterIndex);
-            _addPowermeter(powermeterDef, powermeterValues);
+            _addPowermeter(powermeterDef, powermeterValues, true);
             this->isPersistanceDirty = true;
             PWBOARD_DEBUG_MSG("_editPowermetersEND\n");
             return true;
@@ -599,7 +592,7 @@ private:
         }
         return false;
     }
-    boolean _addPowermeter(PowermeterDef powermeterDef, DDS238Data powermeterValues)
+    boolean _addPowermeter(PowermeterDef powermeterDef, DDS238Data powermeterValues, boolean isNew)
     {
         // uint32_t freeBefore = ESP.getFreeHeap();
         // PWBOARD_DEBUG_MSG(" free heap %d\n", freeBefore);
@@ -611,6 +604,9 @@ private:
 
         if (NULL == pPowermeter)
         {
+            // if new powermeter store new powermeter data
+            if (isNew) this->m_PowermeterDatasPersistance[powermeterIndex] = powermeterValues;
+            
             // allocate a PowerMeter object
             this->m_Powermeters[powermeterIndex] = new Powermeter(
                 powermeterDef,
@@ -625,9 +621,11 @@ private:
                     this->isPersistanceDirty = true;
                 });
             // PWBOARD_DEBUG_MSG("Add at %d\n",powermeterIndex);
+            
+            
             this->isPersistanceDirty = true;
 
-            PWBOARD_DEBUG_MSG("add new powermeter %d %d\n", BoardIOToPowermeterIndex[powermeterDef.dIO] + 1, powermeterDef.dIO);
+            PWBOARD_DEBUG_MSG("add %s powermeter %d %d\n",isNew?"new":"restored", BoardIOToPowermeterIndex[powermeterDef.dIO] + 1, powermeterDef.dIO);
             this->_broadcastPowerMeterInfo(powermeterIndex, NULL);
 
             return true;
@@ -919,76 +917,6 @@ private:
         // wifiInfoEvent["status"] = String(WiFi.status());
         // _broadcastEvent("wc", wifiInfoEvent, client);
     }
-    // void _broadcastEvent(const char *eventType, const JsonArray &eventDatas, AsyncWebSocketClient *client)
-    // {
-    //     PWBOARD_DEBUG_MSG("_broadcastEvent array %s to %s\n", eventType, (NULL == client) ? "ALL" : "client");
-    //     String response;
-    //     // const size_t CAPACITY = JSON_OBJECT_SIZE(3);
-
-    //     DynamicJsonDocument doc(1024);
-    //     doc["type"] = eventType;
-    //     doc["datas"] = eventDatas;
-
-    //     serializeJson(doc, response);
-
-    //     if (NULL != client)
-    //     {
-    //         client->text(response);
-    //     }
-    //     else
-    //     {
-    //         ws.textAll(response);
-    //     }
-    // }
-    // void _broadcastEvent(const char *eventType, const JsonVariant &eventDatas, AsyncWebSocketClient *client)
-    // {
-    //     PWBOARD_DEBUG_MSG("_broadcastEvent variant %s to %s\n", eventType, (NULL == client) ? "ALL" : "client");
-    //     String response;
-    //     const size_t CAPACITY = JSON_OBJECT_SIZE(3);
-
-    //     DynamicJsonDocument doc(CAPACITY);
-    //     doc["type"] = eventType;
-    //     doc["datas"] = eventDatas;
-
-    //     serializeJson(doc, response);
-    //     PWBOARD_DEBUG_MSG("_broadcastEvent %s\n", response.c_str());
-    //     if (NULL != client)
-    //     {
-    //         client->text(response);
-    //     }
-    //     else
-    //     {
-    //         ws.textAll(response);
-    //     }
-    // }
-    // void _broadcastEvent(const char *eventType, const JsonObject &eventDatas, AsyncWebSocketClient *client)
-    // {
-    //     PWBOARD_DEBUG_MSG("_broadcastEvent document %s to %s\n", eventType, (NULL == client) ? "ALL" : "client");
-    //     String response;
-    //     // const size_t CAPACITY = JSON_OBJECT_SIZE(3);
-
-    //     DynamicJsonDocument doc(1024);
-    //     doc["type"] = eventType;
-    //     doc["datas"] = eventDatas;
-
-    //     serializeJson(doc, response);
-
-    //     if (NULL != client)
-    //     {
-    //         client->text(response);
-    //     }
-    //     else
-    //     {
-    //         ws.textAll(response);
-    //     }
-    // }
-
-    //
-    // int addPM(JsonObject Name);
-    // String getPM(int index);
-    // void removePM(int index);
-    // void updatePM(String jsonConfig);
-    // void updatePersistence();
 
     PowermeterBoardSettings m_PowermeterBoardSettings;
 
