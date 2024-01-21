@@ -115,7 +115,7 @@ public:
                     strncpy(this->m_SettingsData.ssid_key, (const char *)(jsonObj["ssid-pwd"]), 64);
                     this->m_SettingsData.tag = MAGICWIFIMGR;
                     this->isSettingsDirty = true;
-                    request->send(200,"");
+                    request->send(200, "");
                     switchTo(SWITCHTOAPSTA);
                 });
             handler->setMethod(HTTP_POST);
@@ -146,11 +146,11 @@ public:
         /***************/
         if (WiFi.getMode() != WIFI_STA)
         {
-            WIFIMGR_DEBUG_MSG("setupAsStationMode %s\n",(const __FlashStringHelper *)strings_WiFiMode[WiFi.getMode()]);
+            WIFIMGR_DEBUG_MSG("setupAsStationMode %s\n", (const __FlashStringHelper *)strings_WiFiMode[WiFi.getMode()]);
             WiFi.mode(WIFI_STA);
-            //WiFi.disconnect(true);
+            // WiFi.disconnect(true);
             _setupStation(p_pWiFiServer, p_pfs);
-            //p_pWiFiServer->reset();
+            // p_pWiFiServer->reset();
         }
     }
     void _setupStation(AsyncWebServer *p_pWiFiServer, fs::FS *p_pfs)
@@ -249,7 +249,7 @@ public:
     {
         if (m_switching != NONE)
         {
-            if ((m_switchingtime!=0) && ((millis() - m_switchingtime) > 1000))
+            if ((m_switchingtime != 0) && ((millis() - m_switchingtime) > 1000))
             {
                 switch (m_switching)
                 {
@@ -270,6 +270,8 @@ public:
                     WiFi.disconnect(true);
                     delay(100);
                     WiFi.mode(WIFI_OFF);
+                    break;
+                default:
                     break;
                 };
                 m_switchingtime = 0;
