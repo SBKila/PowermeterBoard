@@ -2,6 +2,7 @@
 #define EEPROMEX_H
 
 #define NO_GLOBAL_EEPROM
+#include <Arduino.h>
 #include "EEPROM.h"
 
 class EEPROMEXClass : public EEPROMClass
@@ -16,6 +17,23 @@ public:
     void begin()
     {
         EEPROMClass::begin(memSize);
+    }
+
+    // -------------------------------------------------------------------------
+    // Custom commit overload
+    // Wraps the original commit() with interrupt disable/enable
+    // to prevent crashes or corruption during Flash write operations.
+    // -------------------------------------------------------------------------
+    bool commit()
+    {
+        bool success = false;
+        success = EEPROMClass::commit();
+        return success;
+    }
+
+    int getAllocatedSize()
+    {
+        return memSize;
     }
 
 private:

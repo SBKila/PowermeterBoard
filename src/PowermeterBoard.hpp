@@ -20,7 +20,7 @@
 #else
 #define PMBMAGIC 928
 #endif
-#define NBPOWERMETERS 10
+
 #include "HALib/HALib.h"
 
 AsyncWebSocket ws("/pmb/ws"); // access at ws://[esp ip]/pmb/ws
@@ -43,26 +43,23 @@ public:
   PowermeterBoard()
   {
     memset(m_Powermeters, 0, sizeof(m_Powermeters));
-    memset((void *)&m_PowermeterDatasPersistance, 0,
-           NBPOWERMETERS * sizeof(DDS238Data));
+    memset(m_PowermeterDatasPersistance, 0,
+           sizeof(m_PowermeterDatasPersistance));
   }
   ~PowermeterBoard() { delete (m_pPowerMeterDevice); }
-  size_t setupRTCPersistance(size_t offset)
-  {
-    return sizeof(DDS238Data[NBPOWERMETERS]);
-  }
+
   int setupPersistance()
   {
     // manage Persistance tag
     m_TagPersistanceIndex = EEPROMEX.allocate(sizeof(int));
     // manage PowerMeter Persistance
-    m_DefinitionPersistanceIndex = EEPROMEX.allocate(sizeof(PowermeterDef[NBPOWERMETERS]));
+    m_DefinitionPersistanceIndex = EEPROMEX.allocate(sizeof(PowermeterDef[10]));
     // manage PowerMeter Data Persistance
-    m_DataPersistanceIndex = EEPROMEX.allocate(sizeof(DDS238Data[NBPOWERMETERS]));
+    m_DataPersistanceIndex = EEPROMEX.allocate(sizeof(DDS238Data[10]));
     // manage PowerMeter setting
     m_SettingsPersistanceIndex =
         EEPROMEX.allocate(sizeof(PowermeterBoardSettings));
-    return sizeof(m_TagPersistanceIndex) + sizeof(PowermeterDef[NBPOWERMETERS]) +
+    return sizeof(m_TagPersistanceIndex) + sizeof(PowermeterDef[10]) +
            sizeof(m_PowermeterDatasPersistance) +
            sizeof(m_PowermeterBoardSettings);
   }
@@ -130,8 +127,8 @@ public:
             const JsonArray &pmDefinitions = json.as<JsonArray>();
 
             int index = 0;
-            PowermeterDef storedPowerMeterDefinitions[NBPOWERMETERS];
-            // DDS238Data powermeterDatasPersistance[NBPOWERMETERS];
+            PowermeterDef storedPowerMeterDefinitions[10];
+            // DDS238Data powermeterDatasPersistance[10];
 
             for (JsonObject pmDefinition : pmDefinitions) {
               PWBOARD_DEBUG_MSG(F("index %d\n"), index);
@@ -255,7 +252,7 @@ public:
           JsonDocument doc;
 #endif
           boolean atleastone = false;
-          for (int i = 0; i < NBPOWERMETERS; i++)
+          for (int i = 0; i < 10; i++)
           {
             Powermeter *pPowerMeter = this->m_Powermeters[i];
             // PWBOARD_DEBUG_MSG("(%d,%d),", i, (NULL != pPowerMeter) ?
@@ -438,12 +435,12 @@ public:
     EEPROMEX.get(m_DataPersistanceIndex, m_PowermeterDatasPersistance);
 
     // restore powermeters
-    PowermeterDef storedPowerMeterDefinitions[NBPOWERMETERS];
+    PowermeterDef storedPowerMeterDefinitions[10];
     EEPROMEX.get(m_DefinitionPersistanceIndex, storedPowerMeterDefinitions);
 
     PWBOARD_DEBUG_MSG(F("Restore powermeters\n"));
     // for each powermeters
-    for (int i = 0; i < NBPOWERMETERS; i++)
+    for (int i = 0; i < 10; i++)
     {
       // if powermeter is defined
       if (storedPowerMeterDefinitions[i].dIO != 255)
@@ -466,8 +463,8 @@ public:
     EEPROMEX.put(m_DataPersistanceIndex, m_PowermeterDatasPersistance);
 
     // store powermeters
-    PowermeterDef storedPowerMeterDefinitions[NBPOWERMETERS];
-    for (int i = 0; i < NBPOWERMETERS; i++)
+    PowermeterDef storedPowerMeterDefinitions[10];
+    for (int i = 0; i < 10; i++)
     {
       if (m_Powermeters[i] != NULL)
       {
@@ -542,7 +539,7 @@ public:
         _broadcastMQTTConnectionStatus(NULL);
       }
     }
-    for (int i = 0; i < NBPOWERMETERS; i++)
+    for (int i = 0; i < 10; i++)
     {
       if (m_Powermeters[i] != NULL)
       {
@@ -601,7 +598,6 @@ public:
       return (m_pPowerMeterDevice && m_pPowerMeterDevice->isMqttconnected())
                  ? "Connected"
                  : "Disconnected";
-
     return "";
   };
   boolean isMqttConnected() { return isMqttconnected; };
@@ -737,9 +733,9 @@ private:
             // @TODO analyse if broadcast should be done async in main loop
             this->_broadcastPowerMeterData(powermeterIndex, NULL);
             this->isPersistanceDirty = true;
-          },
-          sizeof(DDS238Data) * powermeterIndex);
+          });
       // PWBOARD_DEBUG_MSG("Add at %d\n",powermeterIndex);
+
       this->isPersistanceDirty = true;
 
       PWBOARD_DEBUG_MSG(
@@ -785,7 +781,7 @@ private:
     JsonDocument doc;
     doc["type"] = "pdu";
 
-    for (int i = 0; i < NBPOWERMETERS; i++)
+    for (int i = 0; i < 10; i++)
     {
       if ((NULL != this->m_Powermeters[i]) &&
           ((i == index) || (index == 255)))
@@ -798,7 +794,7 @@ private:
           break;
       }
     }
-    if (doc["datas"].is<JsonArray>())
+    if (doc.containsKey("datas"))
     {
       String response;
       doc.shrinkToFit(); // optional
@@ -817,7 +813,7 @@ private:
 
     // if (index == 255)
     // {
-    //     for (int i = 0; i < NBPOWERMETERS; i++)
+    //     for (int i = 0; i < 10; i++)
     //     {
     //         if (NULL != this->m_Powermeters[i])
     //         {
@@ -834,7 +830,7 @@ private:
     // JsonArray root = doc.to<JsonArray>();
     // PWBOARD_DEBUG_MSG("_broadcastPowerMeterInfo %d \n", nbElement);
 
-    // for (int i = 0; i < NBPOWERMETERS; i++)
+    // for (int i = 0; i < 10; i++)
     // {
     //     if (
     //         (NULL != this->m_Powermeters[i]) &&
@@ -858,7 +854,7 @@ private:
 
     JsonDocument doc;
     doc["type"] = "pdu";
-    for (int i = 0; i < NBPOWERMETERS; i++)
+    for (int i = 0; i < 10; i++)
     {
       if ((NULL != this->m_Powermeters[i]) &&
           ((i == index) || (index == 255)))
@@ -871,7 +867,7 @@ private:
       }
     }
     // post only if datas present
-    if (doc["datas"].is<JsonArray>())
+    if (doc.containsKey("datas"))
     {
       String response;
       doc.shrinkToFit(); // optional
@@ -891,7 +887,7 @@ private:
 
     // if (index == 255)
     // {
-    //     for (int i = 0; i < NBPOWERMETERS; i++)
+    //     for (int i = 0; i < 10; i++)
     //     {
     //         if (NULL != this->m_Powermeters[i])
     //         {
@@ -907,7 +903,7 @@ private:
     // DynamicJsonDocument doc(nbElement * CAPACITY);
     // JsonArray root = doc.to<JsonArray>();
 
-    // for (int i = 0; i < NBPOWERMETERS; i++)
+    // for (int i = 0; i < 10; i++)
     // {
     //     if (
     //         (NULL != this->m_Powermeters[i]) &&
@@ -1034,7 +1030,7 @@ private:
     if (ws == nullptr || ws->count() == 0)
       return;
     char jsonBuffer[160];
-    for (int i = 0; i < NBPOWERMETERS; i++)
+    for (int i = 0; i < 10; i++)
     {
       Powermeter *pPowerMeter = this->m_Powermeters[i];
       if (pPowerMeter != nullptr)
@@ -1051,8 +1047,8 @@ private:
 
   HADevice *m_pPowerMeterDevice;
   // HAComponent *m_pRebootComponent;
-  Powermeter *m_Powermeters[NBPOWERMETERS];
-  DDS238Data m_PowermeterDatasPersistance[NBPOWERMETERS];
+  Powermeter *m_Powermeters[10];
+  DDS238Data m_PowermeterDatasPersistance[10];
   // FS &m_FileSystem;
   uint8_t lastWifiStatus = 0;
 

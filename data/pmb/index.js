@@ -27,8 +27,6 @@ $("#setMQTT").on("pagecreate", function () {
       $("#mqttlogin").val(formData.get("mqtt_login"));
       $("#mqttpwd").val(formData.get("mqtt_pwd"));
 
-
-
       $.ajax({
         type: "POST",
         url: "./mqtt",
@@ -300,7 +298,7 @@ function _deletePM(pmIndex) {
     url: "./pm/" + pmIndex,
     contentType: "application/json",
     success: function (data, textStatus, jqXHR) {
-      const dio = pmReferenceToDio[pmIndex+1];
+      const dio = pmReferenceToDio[pmIndex + 1];
       if (_isPMSettings(dio)) {
         _removePMSettings(dio);
       }

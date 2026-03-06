@@ -23,7 +23,8 @@
 				<a data-icon="carat-d" class="ui-btn-left" data-iconpos="notext" id="btn-ha"></a>
 			</div>
 			<div data-role="main" class="ui-content">
-				<form id="hapanel" style="display: none"></formid>
+				<form id="hapanel" style="display: none">
+					</formid>
 					<div class="ui-field-contain">
 						<label for="nodename">Device name:</label>
 						<input type="text" id="nodename" value="`NODENAME`" disabled="disabled">
@@ -87,7 +88,7 @@
 				<a data-icon="carat-d" class="ui-btn-left" data-iconpos="notext" id="btn-mqtt"></a>
 				<a data-icon="gear" class="ui-btn-right" data-iconpos="notext" href="#setMQTT"></a>
 			</div>
-			<div data-role="main" class="ui-content" >
+			<div data-role="main" class="ui-content">
 				<form id="mqttpanel" style="display: none">
 					<div class="ui-field-contain">
 						<label for="mqtturl">MQTT Server:</label>
@@ -104,7 +105,7 @@
 					</div>
 					<div class="ui-field-contain">
 						<label for="mqttstatus">Status:</label>
-						<input type="text" name="text-1" id="mqttstatus" value="``MQTTCONNECTIONSTATUS``"
+						<input type="text" name="text-1" id="mqttstatus" value="`MQTTCONNECTIONSTATUS`"
 							disabled="disabled">
 					</div>
 				</form>
@@ -130,19 +131,19 @@
 		<form id="setMQTTForm">
 			<div class="ui-field-contain">
 				<label for="mqtt_url">Url:</label>
-				<input type="text" name="mqtt_url" value="" id="mqtt_url" value="%MQTTURL%">
+				<input type="text" name="mqtt_url" value="" id="mqtt_url" value="`MQTTURL`">
 			</div>
 			<div class="ui-field-contain">
 				<label for="mqtt_port">Port:</label>
-				<input type="number" name="mqtt_port" value="" id="mqtt_port" value="%MQTTPORT%">
+				<input type="number" name="mqtt_port" value="" id="mqtt_port" value="`MQTTPORT`">
 			</div>
 			<div class="ui-field-contain">
 				<label for="mqtt_login">Login:</label>
-				<input type="text" name="mqtt_login" value="" id="mqtt_login" value="%MQTTLOGIN%">
+				<input type="text" name="mqtt_login" value="" id="mqtt_login" value="`MQTTLOGIN`">
 			</div>
 			<div class="ui-field-contain">
 				<label for="mqtt_pwd">Login:</label>
-				<input type="text" name="mqtt_pwd" value="" id="mqtt_pwd" value="%MQTTPWD%">
+				<input type="text" name="mqtt_pwd" value="" id="mqtt_pwd" value="`MQTTPWD`">
 			</div>
 			<div data-role="navbar" data-iconpos="bottom">
 				<ul>

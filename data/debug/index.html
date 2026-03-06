@@ -1,0 +1,61 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <title>Board Status</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./index.css">
+    <!-- <script type="text/javascript" src="./jquery.min.js"></script> -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+</head>
+
+<body>
+    <h2>DEBUG INFO</h2>
+    <fieldset>
+        <legend>General</legend>
+        <p>Release: `RELEASE`</p>
+        <p>NodeName: `NODENAME`</p>
+    </fieldset>
+    <fieldset>
+        <legend>Reboot</legend>
+        <p>Nb boot: `BOOT`</p>
+        <p>reset reason: `RESET_REASON`</p>
+        <p>reset info: `RESET_INFO`</p>
+        <p><a href="/debug/reboot.log">Download reboot.log</a></p>
+    </fieldset>
+    <fieldset>
+        <legend>Files system</legend>
+        <p>Started: `FS_STARTED`</p>
+        <p>Used: `FS_USED`/`FS_TOTAL`</p>
+    </fieldset>
+    <fieldset>
+        <legend>Flash Configuration</legend>
+        <p>EEprom alocated: `EEPROM`</p>
+        <p>Real Chip Size: `FLASH_REAL_SIZE` bytes</p>
+        <p>IDE Config Size: `FLASH_IDE_SIZE` bytes</p>
+        <p>Status: <strong>`FLASH_STATUS`</strong></p>
+    </fieldset>
+    <fieldset>
+        <legend>Memory</legend>
+        <p>Baseline (Boot): `MEM_BASE` bytes</p>
+        <p>Min Free: <span id="memMin">`MEM_MIN`</span> bytes</p>
+        <p>Current Free: <span id="memUsed">`MEM_FREE`</span> bytes</p>
+        <p>Used (Base - Current): <span id="memLeak">`MEM_LEAK`</span> bytes</p>
+        <p>Frag: <span id="memFrag">`MEM_FRAG`</span> %</p>
+    </fieldset>
+    <fieldset>
+        <legend>Network</legend>
+        <p>SSID: `SSIDNAME` - `WIFICONNECTIONSTATUS` - `WIFIRSSI` db</p>
+        </hr>
+        <p>IP: `WIFINETWORKIP`</p>
+        <p>MQTT: `MQTTLOGIN`:mqtt://`MQTTDOMAIN`:`MQTTPORT` - `MQTTCONNECTIONSTATUS`</p>
+    </fieldset>
+    <fieldset>
+        <legend>PowerMeters</legend>
+        <div id="metersContainer">
+        </div>
+    </fieldset>
+    <script type="text/javascript" src="./index.js"></script>
+</body>
+
+</html>

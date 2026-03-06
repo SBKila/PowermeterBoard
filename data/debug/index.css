@@ -4,7 +4,22 @@ div.scroll {
     overflow-x: hidden;
     overflow-y: auto;
 }
+
 div.scroll p {
     margin-block-end: 0px;
     margin-block-start: 0px;
+}
+
+/* New style for dynamic meters */
+.meter-card {
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+    padding: 5px;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
+
+.meter-card h4 {
+    margin: 5px 0;
+    border-bottom: 1px solid #ddd;
 }

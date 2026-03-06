@@ -1,36 +1,44 @@
-11/08/2023 :
-=> Adding setupDialog to setup MQTT serveur :  Done
-=> Display powermeters in UI : Done
-=> Add add PowerMeter Settings : Done
-Adding dynamic crash on addComponent -> onHaConnect Done by delay the OnHaConnect in next loop using newComponent flag
-12-13/08/23:
-    Fix DIO in UI is it esp pin number or PM index done
-    ===>> Fix issue when insert dynamic component Works now but not understand why  <<==
-14/08/23
-Next: Add Edit PowerMeter Settings
+# WiFi Manager Behavior
 
-20/08/23 Updating HAAdapterDDS238 to merge with thingspeak release
-21/08/23 Correctly manage Update cumulative VS Full AdapterDDS238
-Think about moving adapter to PMBoard project => it is not HA lib
-27/08/23 Change UI for save all and reboot (PM part).
-28/08/23 Fix UI add remove PM issues ==> disable item in menu list PM reference
-30/08/23 add wifi info in UI
-04/09/23 FiX MQTT settings UI and state notification
-09/09/23 Add color and border to connection sumup
-07/01/24 Switch to ArduinoJSon 7
-08/01/24 Update HAlib to be able to remove a componant when change list and prevent reboot when updateALL from UI
-14/01/24 Rework Wifimanager
-16/01/24 add led ligth during according to WIFI mode
-16/01/24 nom wifi = nom device
+The WiFi Manager implements a robust state machine to handle network connectivity:
 
+1. **Boot Sequence**:
+   - If valid WiFi settings exist, the device starts in Station (STA) mode.
+   - If no settings exist, it starts in Access Point (AP) mode for configuration.
 
-@todo
-=> Debug updatePM cumulate value not notify in MQTT
-=> optimyse persistance by adding dedicated setupDirty flags
-=> Understand how to manage connection to MQTT server full connected or connect on demand ?? 
-=> next debug MQTT login+password when nothing is set for now isSetup flag is used as work around
-=> Think about moving adapter to PMBoard project => it is not HA lib
-=> Add action warning in UI
-=> Change UI for save all and reboot (MQTT part)
-=> Click reload reset all powermeter select index of add pm dialog
-=> Fix confusing DIO and PMindex in UI
+2. **Connection Monitoring**:
+   - The device continuously monitors the WiFi status.
+   - **Zombie Detection**: Every 2 minutes, if connected, it attempts to open a TCP connection to the gateway (port 80). If this fails twice, the connection is marked as "Zombie" (connected but no internet/network access), and a reconnection cycle is forced.
+
+3. **Recovery Strategy (Connection Lost)**:
+   - When connection is lost, a recovery timer starts.
+   - **Retry Interval**: The device attempts to reconnect to the saved SSID every 20 seconds.
+   - **Phase 1 (First 15 minutes)**: The device forces **STA Only** mode. The Access Point is disabled to prioritize resources for reconnection.
+   - **Phase 2 (After 15 minutes)**: If still disconnected, the device switches to **AP + STA** mode. This enables the internal Access Point (allowing user reconfiguration) while continuing to attempt reconnection in the background.
+
+4. **Restoration**:
+   - As soon as the connection is successfully restored (and verified), the device automatically switches back to **STA Only** mode, disabling the Access Point.
+
+# LED Status (Blinker)
+
+The onboard LED provides visual feedback on the device state using specific blink patterns:
+
+- **Heartbeat (1 flash of 10ms every 30s)**:
+  - System is fully operational.
+  - WiFi is connected.
+  - MQTT is connected.
+
+- **1 Blink**:
+  - WiFi is connected.
+  - MQTT is **disconnected**.
+
+- **2 Blinks**:
+  - Device is in **Access Point (AP)** mode (or waiting for config).
+
+- **3 Blinks**:
+  - WiFi Station (STA) is **disconnected**.
+  - Device is currently trying to connect to the WiFi network.
+
+- **5 Blinks**:
+  - **Zombie State** detected.
+  - WiFi appears connected, but the gateway is unreachable.
