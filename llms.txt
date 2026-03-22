@@ -1,0 +1,22 @@
+# PowermeterBoard Project Context for LLMs
+
+## Architecture Overview
+The PowermeterBoard is an ESP8266-based device (using PlatformIO) designed to read energy pulses from DDS238 power meters via GPIO and report data to Home Assistant using MQTT.
+
+## Key Dependencies
+- **HomeAssistantLibrary (HALib)**: A custom library to manage MQTT discovery and entities for Home Assistant. (Located in `.pio/libdeps/nodemcuv2/HomeAssistantLibrary/`).
+- **ESPAsyncWebServer**: For serving the local configuration web interface and WebSocket events.
+- **EEPROMEX**: For persistent storage of power meter configurations and cumulative data across reboots.
+- **ArduinoJson**: For parsing and generating JSON payloads for HTTP API and WebSockets.
+
+## Source Conventions
+- All comments must be written in English.
+- Use `PROGMEM` (`F()`) macros for static debug strings to keep RAM usage low.
+- Diagnostic entities (Memory, Wi-Fi RSSI, MQTT status, Network status) should be assigned the "diagnostic" entity category in Home Assistant.
+
+## Key Files
+- `src/main.cpp`: Entry point, setup of WifiManager, PowermeterBoard, and main loop.
+- `src/PowermetersBoard.hpp`: Core class managing multiple power meters, web handlers for configuration, and WebSocket broadcasts.
+- `src/WifiManager.hpp / .cpp`: Handles Wi-Fi connectivity, AP fallback, and reconnection logic (Zombie detection).
+- `src/Powermeter.hpp`: Wraps the power meter logic using `HALib` components.
+- `platformio.ini`: PlatformIO config (target NodeMCU v2, ESP8266).

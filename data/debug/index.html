@@ -24,16 +24,12 @@
         <p><a href="/debug/reboot.log">Download reboot.log</a></p>
     </fieldset>
     <fieldset>
-        <legend>Files system</legend>
-        <p>Started: `FS_STARTED`</p>
-        <p>Used: `FS_USED`/`FS_TOTAL`</p>
-    </fieldset>
-    <fieldset>
-        <legend>Flash Configuration</legend>
-        <p>EEprom alocated: `EEPROM`</p>
-        <p>Real Chip Size: `FLASH_REAL_SIZE` bytes</p>
-        <p>IDE Config Size: `FLASH_IDE_SIZE` bytes</p>
-        <p>Status: <strong>`FLASH_STATUS`</strong></p>
+        <legend>Network</legend>
+        <p>SSID: `SSIDNAME` - `WIFICONNECTIONSTATUS` - `WIFIRSSI` db</p>
+        </hr>
+        <p>IP: `WIFINETWORKIP`</p>
+        <p>MQTT: `MQTTLOGIN`:mqtt://`MQTTDOMAIN`:`MQTTPORT` - `MQTTCONNECTIONSTATUS`</p>
+        <p>connectivity: <span id="blinkerState">`BLINKER_STATE`</span></p>
     </fieldset>
     <fieldset>
         <legend>Memory</legend>
@@ -44,11 +40,16 @@
         <p>Frag: <span id="memFrag">`MEM_FRAG`</span> %</p>
     </fieldset>
     <fieldset>
-        <legend>Network</legend>
-        <p>SSID: `SSIDNAME` - `WIFICONNECTIONSTATUS` - `WIFIRSSI` db</p>
-        </hr>
-        <p>IP: `WIFINETWORKIP`</p>
-        <p>MQTT: `MQTTLOGIN`:mqtt://`MQTTDOMAIN`:`MQTTPORT` - `MQTTCONNECTIONSTATUS`</p>
+        <legend>Files system</legend>
+        <p>Started: `FS_STARTED`</p>
+        <p>Used: `FS_USED`/`FS_TOTAL`</p>
+    </fieldset>
+    <fieldset>
+        <legend>Flash Configuration</legend>
+        <p>EEprom alocated: `EEPROM`</p>
+        <p>Real Chip Size: `FLASH_REAL_SIZE` bytes</p>
+        <p>IDE Config Size: `FLASH_IDE_SIZE` bytes</p>
+        <p>Status: <strong>`FLASH_STATUS`</strong></p>
     </fieldset>
     <fieldset>
         <legend>PowerMeters</legend>

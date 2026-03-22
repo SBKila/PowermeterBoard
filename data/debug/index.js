@@ -13,6 +13,19 @@ $(document).ready(function () {
                 $("#memFrag").text(a.frag);
                 $("#memLeak").text(a.leak);
             }
+            if (a.type && a.type == "blinker") {
+                const blinkerStatusToString = {
+                    "-1": "Connected",
+                    "0": "Initializing...",
+                    "1": "WiFi OK, MQTT disconnected",
+                    "2": "Access Point Mode",
+                    "3": "WiFi STA disconnected",
+                    "4": "Unknown/mixed mode",
+                    "5": "Zombie state (No gateway ping)"
+                };
+                let readableState = blinkerStatusToString[a.datas] || "Unknown State";
+                $("#blinkerState").text(readableState);
+            }
             if (a.type && a.type == "dds") {
                 handleDDS(a);
             }
@@ -66,6 +79,7 @@ function handleDDS(data) {
             <p>Last pulse duration: <span class="ddslplsd">--</span></p>
             <p>Last Tick Delta: <span class="ddsltd">--</span></p>
             <p>Last Tick time: <span class="ddsltt">--</span></p>
+                <p>Instant Power: <span class="ddsip">--</span> W</p>
         </div>`;
 
         $("#metersContainer").append(html);
@@ -82,4 +96,7 @@ function handleDDS(data) {
     $meter.find(".ddslplsd").text(data.lplsd);
     $meter.find(".ddsltd").text(data.ltd);
     $meter.find(".ddsltt").text(formatDuration(data.ltt));
+    if (data.ip !== undefined) {
+        $meter.find(".ddsip").text(data.ip);
+    }
 }

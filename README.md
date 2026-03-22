@@ -1,4 +1,9 @@
-# WiFi Manager Behavior
+# PowermeterBoard
+
+PowermeterBoard is an ESP8266-based device designed to read energy pulses from DDS238 power meters via GPIO and report cumulative and instant power data directly to Home Assistant using MQTT and the custom HALib library. 
+It features a local web configuration interface and extremely resilient WiFi/MQTT connectivity.
+
+## WiFi Manager Behavior
 
 The WiFi Manager implements a robust state machine to handle network connectivity:
 
@@ -19,7 +24,7 @@ The WiFi Manager implements a robust state machine to handle network connectivit
 4. **Restoration**:
    - As soon as the connection is successfully restored (and verified), the device automatically switches back to **STA Only** mode, disabling the Access Point.
 
-# LED Status (Blinker)
+## LED Status (Blinker)
 
 The onboard LED provides visual feedback on the device state using specific blink patterns:
 

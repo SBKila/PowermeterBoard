@@ -88,6 +88,21 @@ public:
     {
         m_pPowermeterAdapter->loop();
     };
+    float getInstantPower() const
+    {
+        if (m_pPowermeterAdapter)
+        {
+            return m_pPowermeterAdapter->getInstantPower();
+        }
+        return 0.0f;
+    }
+    void suspend(boolean state)
+    {
+        if (m_pPowermeterAdapter)
+        {
+            m_pPowermeterAdapter->suspend(state);
+        }
+    }
 
 private:
     PowermeterDef m_Definition;

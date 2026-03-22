@@ -329,7 +329,7 @@ jQuery.validator.addMethod(
   }, "erreur expression reguliere"
 );
 function _buildPowermeterDisplay(element, index) {
-  return '<h3> PM' + dioToPmReference[element.dIO] + ': <span id="name' + element.dIO + '">' + element.name + '</span><span class="ui-li-count" id="cumulative' + element.dIO + '">' + element.cumulative + '</span></h3>' +
+  return '<h3> PM' + dioToPmReference[element.dIO] + ': <span id="name' + element.dIO + '">' + element.name + '</span><span class="ui-li-count"><span id="instant' + element.dIO + '">' + (element.ip !== undefined ? element.ip + " W" : "-- W") + '</span> | <span id="cumulative' + element.dIO + '">' + element.cumulative + '</span></span></h3>' +
     '<form>' +
     '<div class="ui-grid-a">' +
     '<div class="ui-block-a">' +
@@ -430,6 +430,9 @@ $(document).ready(function () {
         } else {
           $("#cumulative" + element.dIO).html(element.cumulative);
           $("#ticks" + element.dIO).val(element.ticks);
+          if (element.ip !== undefined) {
+            $("#instant" + element.dIO).html(element.ip + " W");
+          }
         }
       })
       return;
