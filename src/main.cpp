@@ -16,7 +16,6 @@
 #include <ESP8266mDNS.h>
 #include <ESPAsyncWebServer.h>
 
-
 #include "./MemoryDebugger.hpp"
 #include "./PowermetersBoard.hpp"
 #include "./WifiManager.hpp"
@@ -49,6 +48,7 @@ int m_debug_EEPROM_ALLOCATED = 0;
 fs::FS *m_fileSystem = &LittleFS;
 AsyncWebServer m_WebServer(80);
 boolean webserverstarted = false;
+bool g_ota_in_progress = false;
 #ifdef ENABLE_DEBUG_WEB
 AsyncWebSocket m_ws("/ws");
 AsyncWebSocket *m_pws = &m_ws;
@@ -263,6 +263,11 @@ void setup() {
           // Add service to MDNS-SD
           MDNS.addService("http", "tcp", 80);
         }
+
+        // Start OTA after WiFi is connected to ensure UDP socket is bound
+        // correctly
+        MAIN_DEBUG_MSG(F("Starting ArduinoOTA\n"));
+        ArduinoOTA.begin();
       });
 
   disconnectedEventHandler = WiFi.onStationModeDisconnected(
@@ -338,11 +343,13 @@ void setup() {
   // --- OTA Configuration (Over-The-Air Update) ---
   ArduinoOTA.setHostname(PMBNAME);
   ArduinoOTA.onStart([]() {
+    g_ota_in_progress = true;
     String type;
     if (ArduinoOTA.getCommand() == U_FLASH) {
       type = "sketch";
     } else { // U_FS
       type = "filesystem";
+      LittleFS.end(); // Unmount filesystem before overwriting
     }
     MAIN_DEBUG_MSG("OTA Start updating %s\n", type.c_str());
 
@@ -356,14 +363,20 @@ void setup() {
     if (m_pws)
       m_pws->enable(false);
 
+    // Stop the web server to prevent background requests during OTA
+    m_WebServer.end();
+    webserverstarted = false;
+
     // 3. FEEDBACK: Very fast blinking to signal the update
     blinkdelay = 50;
   });
 
   ArduinoOTA.onEnd([]() {
     MAIN_DEBUG_MSG("\nOTA End\n");
+    g_ota_in_progress = false;
     if (m_pws)
       m_pws->enable(true);
+    m_WebServer.begin();
     POWERMETERBOARD.suspend(false);
   });
 
@@ -373,15 +386,32 @@ void setup() {
   });
 
   ArduinoOTA.onError([](ota_error_t error) {
+    g_ota_in_progress = false;
     MAIN_DEBUG_MSG("OTA Error[%u]\n", error);
     // In case of error, restart the process
     if (m_pws)
       m_pws->enable(true);
+
+    String errormessage;
+    if (error == OTA_AUTH_ERROR)
+      errormessage = "Auth Failed";
+    else if (error == OTA_BEGIN_ERROR)
+      errormessage = "Begin Failed";
+    else if (error == OTA_CONNECT_ERROR)
+      errormessage = "Connect Failed";
+    else if (error == OTA_RECEIVE_ERROR)
+      errormessage = "Receive Failed";
+    else if (error == OTA_END_ERROR)
+      errormessage = "End Failed";
+    MAIN_DEBUG_MSG("OTA Error: %s\n", errormessage.c_str());
+
     POWERMETERBOARD.suspend(false);
     blinkdelay = PAUSE_DURATION;
+    // On OTA error, it's safer to restart the device
+    ESP.restart();
   });
 
-  ArduinoOTA.begin();
+  // ArduinoOTA.begin() moved to gotIpEventHandler
   // // --------------------------------------------------
 
 #ifdef ESP32
@@ -426,6 +456,10 @@ void setup() {
 unsigned long lastCommit = 0;
 void loop() {
   ArduinoOTA.handle();
+  if (g_ota_in_progress) {
+    blinkLoop(); // Let LED pulse for OTA feedback
+    return;      // Skip everything else to prevent EEPROM commit & I/O
+  }
   blinkLoop();
   POWERMETERBOARD.loop(m_pws);
   WIFIMANAGER.loop();
