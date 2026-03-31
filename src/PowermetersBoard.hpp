@@ -2,11 +2,9 @@
 #define PMBOARD_H
 
 #pragma once
-#include "ArduinoJson.h"
 #include "AsyncJson.h"
 #include "EEPROMEX.h"
 #include "ESPAsyncWebServer.h"
-#include "HALib/HALib.h"
 #include "Powermeter.hpp"
 
 // EXTERN BLINKER STATE
@@ -116,7 +114,7 @@ public:
           }
         });
     handler->setMethod(HTTP_POST);
-    p_pWebServer->addHandler(handler);
+    p_pWebServer->addHandler((AsyncWebHandler *)handler);
   };
   void setupHandlerAddPowerMeter(const char *deviceName,
                                  AsyncWebServer *p_pWebServer, fs::FS fs) {
@@ -169,20 +167,6 @@ public:
               powerMeterData.cumulative = pmDefinition["cumulative"];
               _updatePowermeters(newDef, powerMeterData);
 
-              // powermeterDatasPersistance[index].tag = 963;
-              // powermeterDatasPersistance[index].ticks = 0; //
-              // pmDefinition["ticks"];
-              // powermeterDatasPersistance[index].cumulative =
-              // pmDefinition["cumulative"];
-              // m_PowermeterDatasPersistance[index].tag = 963;
-              // m_PowermeterDatasPersistance[index].ticks = 0; //
-              // pmDefinition["ticks"];
-              // m_PowermeterDatasPersistance[index].cumulative =
-              // pmDefinition["cumulative"];
-
-              // _printPowermeterDef(storedPowerMeterDefinitions[index]);
-              // _printPowermeterData(powermeterDatasPersistance[index]);
-              // _printPowermeterData(m_PowermeterDatasPersistance[index]);
               index++;
             }
             EEPROMEX.put(m_DefinitionPersistanceIndex,
@@ -263,7 +247,7 @@ public:
               JsonObject obj = doc.add<JsonObject>();
 #endif
               _fillDefinitionToJson(pPowerMeter->getDefinition(), obj);
-              _fillPMDatatoJson(pPowerMeter->getDefinition().dIO, obj);
+              _fillPMDatatoJson(i, obj);
             }
           }
           if (atleastone) {
@@ -344,12 +328,19 @@ public:
     });
     p_pWebServer->addHandler(&ws);
 
+    // Redirect /pmb to /pmb/index.htm (exact match to avoid redirect loop for
+    // /pmb/...)
+    p_pWebServer->on("^\\/pmb$", HTTP_GET, [](AsyncWebServerRequest *request) {
+      request->redirect("/pmb/index.htm");
+    });
+
     // attach AsyncEventSource
     p_pWebServer->serveStatic("/pmb/", fs, "/pmb/")
         .setTemplateProcessor([this](const String &var) -> String {
           return this->stringProcessor(var);
         })
-        .setDefaultFile("index.htm");
+        .setDefaultFile("index.htm")
+        .setCacheControl("no-cache, no-store, must-revalidate");
 
     // 1. Memory Diagnostics (Heap)
     m_pHeapSensor =
