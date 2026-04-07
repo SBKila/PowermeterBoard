@@ -465,9 +465,45 @@ $(document).ready(function () {
       }
       return;
     }
+    // Scrutine data-vars responses and dispatch to DOM elements
+    if (pmdEvent.type === "sc") {
+      if (pmdEvent.datas) {
+        $("[data-var]").each(function() {
+          let varName = $(this).attr("data-var");
+          if (varName === "MQTTURL_FULL") {
+             // Exception handled cleanly: construct mqtt url
+             let domain = pmdEvent.datas["MQTTDOMAIN"] || "";
+             let port = pmdEvent.datas["MQTTPORT"] || "1883";
+             $(this).val("mqtt://" + domain + ":" + port);
+          } else if (pmdEvent.datas[varName] !== undefined) {
+             $(this).val(pmdEvent.datas[varName]);
+          }
+        });
+      }
+      return;
+    }
   };
   const wifiStatusToString = ["Idle", "No ssid avail", "Scan completed", "Connected", "Connect failed", "Connection lost", "Wrong password", "Disconnected"];
 
-  ws.onclose = function (evt) { console.log("WS:Connection closed."); };
+  ws.onopen = function (evt) { 
+    console.log("WS:Connection open ..."); 
+    // Ask for UI template variables implicitly
+    let varsToReq = [];
+    $("[data-var]").each(function() {
+        let v = $(this).attr("data-var");
+        if (v === "MQTTURL_FULL") {
+            if (!varsToReq.includes("MQTTDOMAIN")) varsToReq.push("MQTTDOMAIN");
+            if (!varsToReq.includes("MQTTPORT")) varsToReq.push("MQTTPORT");
+        } else {
+            if (!varsToReq.includes(v)) varsToReq.push(v);
+        }
+    });
+    if (varsToReq.length > 0) {
+        ws.send(JSON.stringify({
+            "type": "req_vars",
+            "vars": varsToReq
+        }));
+    }
+  };
   ws.onerror = function (evt) { console.log("WS:WebSocket error : " + evt.data) };
 });

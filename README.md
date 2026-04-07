@@ -47,3 +47,31 @@ The onboard LED provides visual feedback on the device state using specific blin
 - **5 Blinks**:
   - **Zombie State** detected.
   - WiFi appears connected, but the gateway is unreachable.
+
+## Web Interface & Data Dictionary (WebSocket SPA)
+
+The web UI uses a Single Page Application (SPA) architecture communicating via WebSockets. It sends `req_vars` JSON requests with an array of keys to dynamically populate its DOM elements. 
+
+The following variables are available throughout the system and resolved by the combined `stringProcessor` layers:
+
+### System & Debug variables
+* `RELEASE`: Firmware build version
+* `EEPROM`: Total EEPROM space allocated
+* `FS_STARTED`: Is filesystem started (YES/NO)
+* `FS_USED`: Filesystem bytes used
+* `FS_TOTAL`: Filesystem total capacity
+* `BLINKER_STATE`: Current textual state of the LED blinker
+
+### Wifi variables
+* `SSIDNAME`: The currently configured WiFi SSID
+* `WIFICONNECTIONSTATUS`: Textual connection state ("Connected" or "Not connected")
+* `WIFINETWORKIP`: Current explicit IP Address or "Not connected"
+* `WIFIRSSI`: WiFi signal strength in dBm
+
+### MQTT & Powermeter variables
+* `NODENAME`: Name of the device
+* `MQTTDOMAIN`: MQTT Broker Hostname or IP
+* `MQTTPORT`: MQTT Broker Port
+* `MQTTLOGIN`: MQTT User
+* `MQTTPWD`: MQTT Password
+* `MQTTCONNECTIONSTATUS`: "Connected" or "Disconnected"

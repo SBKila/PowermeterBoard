@@ -488,16 +488,35 @@ void WIFIManagerClass::_setupWebHandlerAccessPoint(AsyncWebServer *p_pWiFiServer
 
     WIFIMGR_DEBUG_MSG(F("HTTP attach /wifi\n"));
     m_pWifiStaticHandler = &p_pWiFiServer->serveStatic("/wifi", *p_pfs, "/wifi")
-                                .setTemplateProcessor([this](const String &var) -> String
-                                                      { return this->stringProcessor(var); });
+                                .setDefaultFile("setup.html")
+                                .setCacheControl("no-cache, no-store, must-revalidate");
     m_pWifiStaticHandler->setFilter(ON_AP_FILTER);
 
     m_setupWebHandlerAccessPointDone = true;
   };
 
   WIFIMGR_DEBUG_MSG(F("WebScock attach /wifi\n"));
-  if (!p_wifimanagerWebSocket)
+  if (!p_wifimanagerWebSocket) {
     p_wifimanagerWebSocket = new AsyncWebSocket("/wifi");
+    p_wifimanagerWebSocket->onEvent([this](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
+        if (type == WS_EVT_CONNECT) {
+            JsonDocument doc;
+            doc["evt"] = 2; // Type evt 2 = System Config on WiFi setup page
+            JsonObject datas = doc["data"].to<JsonObject>();
+            if (this->isSettingExist()) {
+                datas["ssid_name"] = this->m_SettingsData.ssid_name;
+            } else {
+                datas["ssid_name"] = "";
+            }
+            String response;
+            doc.shrinkToFit();
+            serializeJson(doc, response);
+            if (client) {
+                client->text(response);
+            }
+        }
+    });
+  }
   p_pWiFiServer->addHandler(p_wifimanagerWebSocket);
   p_wifimanagerWebSocket->enable(true);
 

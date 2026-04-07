@@ -32,6 +32,11 @@ $(document).ready(function () {
                         }
                     });
                     break;
+                case 2:
+                    if (message.data && message.data.ssid_name) {
+                        $("#ssid-name").val(message.data.ssid_name);
+                    }
+                    break;
             }
         } catch (e) {
             $("#lastlog").prepend("<p>" + evt.data + "</p>");

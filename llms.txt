@@ -20,3 +20,19 @@ The PowermeterBoard is an ESP8266-based device (using PlatformIO) designed to re
 - `src/WifiManager.hpp / .cpp`: Handles Wi-Fi connectivity, AP fallback, and reconnection logic (Zombie detection).
 - `src/Powermeter.hpp`: Wraps the power meter logic using `HALib` components.
 - `platformio.ini`: PlatformIO config (target NodeMCU v2, ESP8266).
+
+## Web UI Data Dictionary
+The Web UI (SPA) requests data via WebSockets using `req_vars` containing an array of keys. The backend parses them through the `stringProcessor` waterfall. Expected keys are:
+- `NODENAME`: The MQTT device node name
+- `MQTTDOMAIN`: MQTT host
+- `MQTTPORT`: MQTT port
+- `MQTTLOGIN`: MQTT login
+- `MQTTPWD`: MQTT password
+- `MQTTCONNECTIONSTATUS`: MQTT state ("Connected" / "Disconnected")
+- `SSIDNAME`: WiFi SSID Name
+- `WIFICONNECTIONSTATUS`: WiFi connection state ("Connected" / "Not connected")
+- `WIFINETWORKIP`: WiFi IP string
+- `WIFIRSSI`: WiFi RSSI level in dBm
+- `RELEASE`: Firmware string defined by `BUILD_VERSION_STRING`
+- `EEPROM`, `FS_STARTED`, `FS_USED`, `FS_TOTAL`: Internal system diagnostics
+- `BLINKER_STATE`: Textual LED state (Heartbeat, Zombie, etc.)

@@ -324,6 +324,25 @@ public:
         _broadcastWIFIConfig(client);
       } else if (type == WS_EVT_DISCONNECT) {
         PWBOARD_DEBUG_MSG(F("Client disconnected\n"));
+      } else if (type == WS_EVT_DATA) {
+        AwsFrameInfo *info = (AwsFrameInfo *)arg;
+        if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
+          JsonDocument doc;
+          DeserializationError err = deserializeJson(doc, data, len);
+          if (!err && doc["type"] == "req_vars") {
+              JsonDocument resp;
+              resp["type"] = "sc";
+              JsonObject respData = resp["datas"].to<JsonObject>();
+              JsonArray vars = doc["vars"].as<JsonArray>();
+              for (JsonVariant v : vars) {
+                 String key = v.as<String>();
+                 respData[key] = this->stringProcessor(key);
+              }
+              String out;
+              serializeJson(resp, out);
+              client->text(out);
+          }
+        }
       }
     });
     p_pWebServer->addHandler(&ws);
@@ -334,13 +353,10 @@ public:
       request->redirect("/pmb/index.htm");
     });
 
-    // attach AsyncEventSource
+    // attach static web files without Template Processor to save RAM
     p_pWebServer->serveStatic("/pmb/", fs, "/pmb/")
-        .setTemplateProcessor([this](const String &var) -> String {
-          return this->stringProcessor(var);
-        })
         .setDefaultFile("index.htm")
-        .setCacheControl("no-cache, no-store, must-revalidate");
+        .setCacheControl("max-age=86400");
 
     // 1. Memory Diagnostics (Heap)
     m_pHeapSensor =
@@ -547,7 +563,7 @@ public:
     }
   }; //@TODO
   String stringProcessor(const String &variable) {
-    PWBOARD_DEBUG_MSG(F("stringProcessor %s\n"), variable.c_str());
+    // PWBOARD_DEBUG_MSG(F("stringProcessor %s\n"), variable.c_str());
     if (variable == "NODENAME") {
       if (m_pPowerMeterDevice)
         return String(m_pPowerMeterDevice->getName());

@@ -83,6 +83,12 @@ public:
       if (currentFree < _minFreeHeap)
       {
         _minFreeHeap = currentFree;
+
+        // Save real-time minimum heap to RTC Memory (survives crashes)
+        uint32_t rtcData[2];
+        rtcData[0] = 0x12345678; // Magic signature
+        rtcData[1] = _minFreeHeap;
+        ESP.rtcUserMemoryWrite(100, rtcData, sizeof(rtcData));
       }
     }
 

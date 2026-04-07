@@ -27,7 +27,7 @@
 					</formid>
 					<div class="ui-field-contain">
 						<label for="nodename">Device name:</label>
-						<input type="text" id="nodename" value="`NODENAME`" disabled="disabled">
+						<input type="text" id="nodename" data-var="NODENAME" value="" disabled="disabled">
 					</div>
 				</form>
 			</div>
@@ -92,20 +92,20 @@
 				<form id="mqttpanel" style="display: none">
 					<div class="ui-field-contain">
 						<label for="mqtturl">MQTT Server:</label>
-						<input type="text" name="text-1" id="mqtturl" value="mqtt://`MQTTDOMAIN`:`MQTTPORT`"
+						<input type="text" name="text-1" id="mqtturl" data-var="MQTTURL_FULL" value=""
 							disabled="disabled">
 					</div>
 					<div class="ui-field-contain">
 						<label for="mqttlogin">Login:</label>
-						<input type="text" name="text-1" id="mqttlogin" value="`MQTTLOGIN`" disabled="disabled">
+						<input type="text" name="text-1" id="mqttlogin" data-var="MQTTLOGIN" value="" disabled="disabled">
 					</div>
 					<div class="ui-field-contain">
 						<label for="mqttpwd">Password:</label>
-						<input type="text" name="text-1" id="mqttpwd" value="`MQTTPWD`" disabled="disabled">
+						<input type="text" name="text-1" id="mqttpwd" data-var="MQTTPWD" value="" disabled="disabled">
 					</div>
 					<div class="ui-field-contain">
 						<label for="mqttstatus">Status:</label>
-						<input type="text" name="text-1" id="mqttstatus" value="`MQTTCONNECTIONSTATUS`"
+						<input type="text" name="text-1" id="mqttstatus" data-var="MQTTCONNECTIONSTATUS" value=""
 							disabled="disabled">
 					</div>
 				</form>
@@ -131,19 +131,19 @@
 		<form id="setMQTTForm">
 			<div class="ui-field-contain">
 				<label for="mqtt_url">Url:</label>
-				<input type="text" name="mqtt_url" value="" id="mqtt_url" value="`MQTTURL`">
+				<input type="text" name="mqtt_url" data-var="MQTTDOMAIN" value="" id="mqtt_url">
 			</div>
 			<div class="ui-field-contain">
 				<label for="mqtt_port">Port:</label>
-				<input type="number" name="mqtt_port" value="" id="mqtt_port" value="`MQTTPORT`">
+				<input type="number" name="mqtt_port" data-var="MQTTPORT" value="" id="mqtt_port">
 			</div>
 			<div class="ui-field-contain">
 				<label for="mqtt_login">Login:</label>
-				<input type="text" name="mqtt_login" value="" id="mqtt_login" value="`MQTTLOGIN`">
+				<input type="text" name="mqtt_login" data-var="MQTTLOGIN" value="" id="mqtt_login">
 			</div>
 			<div class="ui-field-contain">
 				<label for="mqtt_pwd">Login:</label>
-				<input type="text" name="mqtt_pwd" value="" id="mqtt_pwd" value="`MQTTPWD`">
+				<input type="text" name="mqtt_pwd" data-var="MQTTPWD" value="" id="mqtt_pwd">
 			</div>
 			<div data-role="navbar" data-iconpos="bottom">
 				<ul>

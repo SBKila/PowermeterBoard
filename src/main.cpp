@@ -191,7 +191,7 @@ void blinkLoop() {
 
 #ifdef ENABLE_DEBUG_WEB
 String stringProcessor(const String &var) {
-  MAIN_DEBUG_MSG(F("stringProcessor %s\n"), var.c_str());
+  // MAIN_DEBUG_MSG(F("stringProcessor %s\n"), var.c_str());
   if (var == "RELEASE") {
     return String(BUILD_VERSION_STRING);
   } else if (var == "EEPROM") {
@@ -345,69 +345,63 @@ void setup() {
   ArduinoOTA.onStart([]() {
     g_ota_in_progress = true;
     String type;
+
+    MAIN_DEBUG_MSG("=== OTA START PHASE 1: STOPPING SERVICES ===\n");
+    // 1. SUSPENSION: Stop web server and websockets immediately
+    if (m_pws)
+      m_pws->enable(false);
+    m_WebServer.end();
+    webserverstarted = false;
+
+    MAIN_DEBUG_MSG("=== OTA START PHASE 2: BACKUP & SUSPEND ===\n");
+    POWERMETERBOARD.suspend(true);
+    POWERMETERBOARD.backup(); 
+    EEPROMEX.commit();        
+
     if (ArduinoOTA.getCommand() == U_FLASH) {
       type = "sketch";
     } else { // U_FS
       type = "filesystem";
-      LittleFS.end(); // Unmount filesystem before overwriting
     }
-    MAIN_DEBUG_MSG("OTA Start updating %s\n", type.c_str());
+    MAIN_DEBUG_MSG("=== OTA START PHASE 3: UPDATE PROCESS BEGINNING (%s) ===\n", type.c_str());
 
-    // 1. CRITICAL BACKUP: Force write from RAM -> Flash
-    POWERMETERBOARD.backup(); // Prepares the data
-    EEPROMEX.commit();        // Writes physically
-
-    // 2. SUSPENSION: Stop business logic to free up the CPU
-    POWERMETERBOARD.suspend(true);
-
-    if (m_pws)
-      m_pws->enable(false);
-
-    // Stop the web server to prevent background requests during OTA
-    m_WebServer.end();
-    webserverstarted = false;
-
-    // 3. FEEDBACK: Very fast blinking to signal the update
     blinkdelay = 50;
   });
 
   ArduinoOTA.onEnd([]() {
-    MAIN_DEBUG_MSG("\nOTA End\n");
-    g_ota_in_progress = false;
-    if (m_pws)
-      m_pws->enable(true);
-    m_WebServer.begin();
-    POWERMETERBOARD.suspend(false);
+    MAIN_DEBUG_MSG("\n=== OTA END SUCCESS! Board will reboot via Core. ===\n");
+    // We intentionally don't do anything else to let the MCU commit and reboot gracefully.
   });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    // Blink the LED for each received packet
+    if (progress == 0) MAIN_DEBUG_MSG("\n[OTA Progress]: Start...");
+    else if (progress == total) MAIN_DEBUG_MSG("\n[OTA Progress]: 100%% (Finalizing)");
+    else if (progress % (total/10) == 0) MAIN_DEBUG_MSG(".");
+    
     digitalWrite(LED, !digitalRead(LED));
   });
 
   ArduinoOTA.onError([](ota_error_t error) {
     g_ota_in_progress = false;
-    MAIN_DEBUG_MSG("OTA Error[%u]\n", error);
-    // In case of error, restart the process
-    if (m_pws)
-      m_pws->enable(true);
-
+    MAIN_DEBUG_MSG("\n=== OTA ERROR TRIGGERED [%u] ===\n", error);
+    
     String errormessage;
     if (error == OTA_AUTH_ERROR)
       errormessage = "Auth Failed";
     else if (error == OTA_BEGIN_ERROR)
-      errormessage = "Begin Failed";
+      errormessage = "Begin Failed (No Space / Bad alignment)";
     else if (error == OTA_CONNECT_ERROR)
       errormessage = "Connect Failed";
     else if (error == OTA_RECEIVE_ERROR)
-      errormessage = "Receive Failed";
+      errormessage = "Receive Failed (Network drop / Timeout)";
     else if (error == OTA_END_ERROR)
-      errormessage = "End Failed";
-    MAIN_DEBUG_MSG("OTA Error: %s\n", errormessage.c_str());
+      errormessage = "End Failed (MD5 check failed or Write failed)";
+    else
+      errormessage = "Unknown Error";
 
-    POWERMETERBOARD.suspend(false);
-    blinkdelay = PAUSE_DURATION;
-    // On OTA error, it's safer to restart the device
+    MAIN_DEBUG_MSG("OTA Reason: %s\n", errormessage.c_str());
+    MAIN_DEBUG_MSG("=== REBOOTING SYSTEM TO RECOVER ===\n");
+    delay(500);
     ESP.restart();
   });
 

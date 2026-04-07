@@ -25,6 +25,17 @@ public:
         // These functions read internal ESP8266 registers.
         m_LastResetReason = ESP.getResetReason();
         m_LastResetInfo = ESP.getResetInfo();
+
+        // --- 2. Check RTC Memory Probe (Out Of Memory detection) ---
+        uint32_t rtcData[2];
+        if (ESP.rtcUserMemoryRead(100, rtcData, sizeof(rtcData))) {
+            if (rtcData[0] == 0x12345678) {
+                m_LastResetInfo += " [OOM Probe: MinHeap=" + String(rtcData[1]) + " B]";
+                // Clear the RTC magic block to avoid false positives on next reboot
+                rtcData[0] = 0;
+                ESP.rtcUserMemoryWrite(100, rtcData, sizeof(rtcData));
+            }
+        }
     }
 
     // --- NOUVELLE FONCTION ---
