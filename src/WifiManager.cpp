@@ -628,3 +628,21 @@ void WIFIManagerClass::pushNotif(JsonVariantConst message)
 #endif
   p_wifimanagerWebSocket->printfAll(output.c_str());
 }
+
+void WIFIManagerClass::exportConfigJson(JsonObject &obj) {
+  obj["ssid_name"] = m_SettingsData.ssid_name;
+  obj["ssid_key"] = m_SettingsData.ssid_key;
+}
+
+void WIFIManagerClass::importConfigJson(JsonObject &obj) {
+  if (!obj["ssid_name"].isNull()) {
+    strncpy(m_SettingsData.ssid_name, obj["ssid_name"], sizeof(m_SettingsData.ssid_name) - 1);
+    m_SettingsData.ssid_name[sizeof(m_SettingsData.ssid_name) - 1] = '\0';
+  }
+  if (!obj["ssid_key"].isNull()) {
+    strncpy(m_SettingsData.ssid_key, obj["ssid_key"], sizeof(m_SettingsData.ssid_key) - 1);
+    m_SettingsData.ssid_key[sizeof(m_SettingsData.ssid_key) - 1] = '\0';
+  }
+  m_SettingsData.tag = MAGICWIFIMGR;
+  isSettingsDirty = true;
+}

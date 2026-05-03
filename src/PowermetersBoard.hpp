@@ -6,6 +6,9 @@
 #include "EEPROMEX.h"
 #include "ESPAsyncWebServer.h"
 #include "Powermeter.hpp"
+#include <MD5Builder.h>
+#include <AESLib.h>
+#include "WifiManager.hpp"
 
 // EXTERN BLINKER STATE
 extern int g_currentBlinkerState;
@@ -299,11 +302,151 @@ public:
     handler->setMethod(HTTP_POST);
     p_pWebServer->addHandler(handler);
   }
+
+  void setupHandlerConfig(const char *deviceName, AsyncWebServer *p_pWebServer, fs::FS fs) {
+    p_pWebServer->on("/pmb/config/export", HTTP_POST, [this](AsyncWebServerRequest *request) {
+      if (!request->hasParam("pwd", true)) {
+        request->send(400, "text/plain", "Missing password");
+        return;
+      }
+      String pwd = request->getParam("pwd", true)->value();
+      
+      JsonDocument doc;
+      JsonObject wifiObj = doc["wifi"].to<JsonObject>();
+      WIFIMANAGER.exportConfigJson(wifiObj);
+      
+      JsonObject mqttObj = doc["mqtt"].to<JsonObject>();
+      this->exportConfigJson(mqttObj);
+      
+      JsonArray pmArr = doc["powermeters"].to<JsonArray>();
+      for (int i = 0; i < NBPOWERMETERS; i++) {
+        if (m_Powermeters[i] != NULL) {
+          JsonObject pmObj = pmArr.add<JsonObject>();
+          _fillDefinitionToJson(i, pmObj);
+          _fillValuestoJson(m_PowermeterDatasPersistance[i], pmObj);
+        }
+      }
+      
+      String jsonStr;
+      serializeJson(doc, jsonStr);
+      
+      MD5Builder md5;
+      md5.begin();
+      md5.add(pwd);
+      md5.calculate();
+      byte key[16];
+      md5.getBytes(key);
+      byte iv[16] = {0};
+      
+      AESLib aesLib;
+      uint16_t cipher_len = aesLib.get_cipher64_length(jsonStr.length());
+      char* encryptedArr = new char[cipher_len + 1];
+      memset(encryptedArr, 0, cipher_len + 1);
+      aesLib.encrypt64((const byte*)jsonStr.c_str(), jsonStr.length(), encryptedArr, key, 16, iv);
+      String encrypted = String(encryptedArr);
+      delete[] encryptedArr;
+      
+      AsyncWebServerResponse *response = request->beginResponse(200, "application/octet-stream", encrypted);
+      response->addHeader("Content-Disposition", "attachment; filename=\"powermeters_backup.enc\"");
+      request->send(response);
+    });
+
+    p_pWebServer->on("/pmb/config/import", HTTP_POST, [this](AsyncWebServerRequest *request) {
+      PWBOARD_DEBUG_MSG(F("POST /pmb/config/import\n"));
+      if (!request->hasParam("pwd", true)) {
+        PWBOARD_DEBUG_MSG(F("Missing password param\n"));
+        request->send(400, "text/plain", "Missing password");
+        return;
+      }
+      String pwd = request->getParam("pwd", true)->value();
+      String *encStr = (String*)request->_tempObject;
+      if (!encStr) {
+        PWBOARD_DEBUG_MSG(F("No file uploaded (encStr is null)\n"));
+        request->send(400, "text/plain", "No file uploaded");
+        return;
+      }
+      PWBOARD_DEBUG_MSG(F("File received, length: %d\n"), encStr->length());
+      
+      MD5Builder md5;
+      md5.begin();
+      md5.add(pwd);
+      md5.calculate();
+      byte key[16];
+      md5.getBytes(key);
+      byte iv[16] = {0};
+      
+      AESLib aesLib;
+      uint16_t cipher_len = encStr->length();
+      byte* decryptedArr = new byte[cipher_len + 1];
+      memset(decryptedArr, 0, cipher_len + 1);
+      uint16_t decrypted_len = aesLib.decrypt64((char*)encStr->c_str(), cipher_len, decryptedArr, key, 16, iv);
+      (void)decrypted_len;
+      String decrypted = String((char*)decryptedArr);
+      delete[] decryptedArr;
+      delete encStr;
+      request->_tempObject = NULL;
+      
+      JsonDocument doc;
+      DeserializationError err = deserializeJson(doc, decrypted);
+      if (err) {
+        PWBOARD_DEBUG_MSG(F("JSON deserialize error: %s\n"), err.c_str());
+        request->send(400, "text/plain", "Invalid password or corrupted file");
+        return;
+      }
+      PWBOARD_DEBUG_MSG(F("JSON deserialize OK. Restoring...\n"));
+      
+      JsonObject wifiObj = doc["wifi"];
+      if (!wifiObj.isNull()) WIFIMANAGER.importConfigJson(wifiObj);
+      
+      JsonObject mqttObj = doc["mqtt"];
+      if (!mqttObj.isNull()) this->importConfigJson(mqttObj);
+      
+      JsonArray pmArr = doc["powermeters"];
+      if (!pmArr.isNull()) {
+        for (int i = 0; i < NBPOWERMETERS; i++) {
+          if (m_Powermeters[i] != NULL) {
+            _removePowermeter(i);
+            m_PowermeterDatasPersistance[i].tag = 0;
+            m_PowermeterDatasPersistance[i].ticks = 0;
+            m_PowermeterDatasPersistance[i].cumulative = 0;
+          }
+        }
+        for (JsonObject pmDefinition : pmArr) {
+          PowermeterDef newDef;
+          const char* pmName = pmDefinition["name"];
+          strncpy(newDef.name, pmName ? pmName : "Unknown", sizeof(newDef.name) - 1);
+          newDef.name[sizeof(newDef.name) - 1] = '\0';
+          newDef.maxAmp = pmDefinition["maxAmp"];
+          newDef.nbTickByKW = pmDefinition["nbTickByKW"];
+          newDef.voltage = pmDefinition["voltage"];
+          newDef.dIO = pmDefinition["dIO"];
+          
+          DDS238Data powerMeterData;
+          powerMeterData.ticks = pmDefinition["ticks"];
+          powerMeterData.cumulative = pmDefinition["cumulative"];
+          powerMeterData.tag = PMBMAGIC;
+          
+          _addPowermeter(newDef, powerMeterData, true);
+        }
+        isPersistanceDirty = true;
+      }
+      
+      request->send(200, "text/html", "<b>Configuration restored.</b> Rebooting...<script>setTimeout(()=>window.location.href='/pmb/', 5000);</script>");
+      forceRestart = 2000;
+    }, [this](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+      if (!index) {
+        request->_tempObject = new String();
+      }
+      String *encStr = (String*)request->_tempObject;
+      encStr->concat((const char*)data, len);
+    });
+  }
   void setup(const char *deviceName, AsyncWebServer *p_pWebServer, fs::FS fs) {
     PWBOARD_DEBUG_MSG(F("setup powermetersBoard\n"));
 
     // attach set mqtt settings
     setupHandlerSetMqtt(deviceName, p_pWebServer, fs);
+    setupHandlerConfig(deviceName, p_pWebServer, fs);
 
     // Get list of configured powermeter
     setupHandlerGetPowerMeters(deviceName, p_pWebServer, fs);
@@ -533,9 +676,11 @@ public:
       }
     }
     if (forceRestartAfterPersistance && !isPersistanceDirty) {
+      EEPROMEX.commit();
       ESP.restart();
     }
     if (forceRestart == 0) {
+      EEPROMEX.commit();
       ESP.restart();
     }
     if (forceRestart > 0) {
@@ -635,6 +780,30 @@ private:
     //_fillPMDatatoJson(powermeterDef.dIO, obj);
     serializeJson(obj, response);
     return response;
+  }
+
+  void exportConfigJson(JsonObject &obj) {
+    obj["node_name"] = m_PowermeterBoardSettings.node_name;
+    obj["mqtt_domain"] = m_PowermeterBoardSettings.mqtt_domain;
+    obj["mqtt_port"] = m_PowermeterBoardSettings.mqtt_port;
+    obj["mqtt_login"] = m_PowermeterBoardSettings.mqtt_login;
+    obj["mqtt_pwd"] = m_PowermeterBoardSettings.mqtt_pwd;
+  }
+
+  void importConfigJson(JsonObject &obj) {
+    if (!obj["node_name"].isNull()) strncpy(m_PowermeterBoardSettings.node_name, obj["node_name"], sizeof(m_PowermeterBoardSettings.node_name) - 1);
+    if (!obj["mqtt_domain"].isNull()) strncpy(m_PowermeterBoardSettings.mqtt_domain, obj["mqtt_domain"], sizeof(m_PowermeterBoardSettings.mqtt_domain) - 1);
+    if (!obj["mqtt_port"].isNull()) m_PowermeterBoardSettings.mqtt_port = obj["mqtt_port"];
+    if (!obj["mqtt_login"].isNull()) strncpy(m_PowermeterBoardSettings.mqtt_login, obj["mqtt_login"], sizeof(m_PowermeterBoardSettings.mqtt_login) - 1);
+    if (!obj["mqtt_pwd"].isNull()) strncpy(m_PowermeterBoardSettings.mqtt_pwd, obj["mqtt_pwd"], sizeof(m_PowermeterBoardSettings.mqtt_pwd) - 1);
+    
+    m_PowermeterBoardSettings.node_name[sizeof(m_PowermeterBoardSettings.node_name) - 1] = '\0';
+    m_PowermeterBoardSettings.mqtt_domain[sizeof(m_PowermeterBoardSettings.mqtt_domain) - 1] = '\0';
+    m_PowermeterBoardSettings.mqtt_login[sizeof(m_PowermeterBoardSettings.mqtt_login) - 1] = '\0';
+    m_PowermeterBoardSettings.mqtt_pwd[sizeof(m_PowermeterBoardSettings.mqtt_pwd) - 1] = '\0';
+    
+    m_PowermeterBoardSettings.tag = PMBMAGIC;
+    isPersistanceDirty = true;
   }
 
   void _printPowermeterDef(PowermeterDef powermeterDef) {

@@ -35,7 +35,7 @@ void logDebug(const char *module, const __FlashStringHelper *format, ...);
 // -------------------------------------------------------------------------
 // Production Mode: All macros compile to nothing
 // -------------------------------------------------------------------------
-#define DEBUG_INIT(x)
+#define DEBUG_INIT()
 #define DEBUG_MSG(...)
 #endif
 

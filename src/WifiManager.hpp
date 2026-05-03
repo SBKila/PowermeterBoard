@@ -56,6 +56,8 @@ public:
   void _handlemodeSwitch();
   String stringProcessor(const String &var);
   bool isNetworkZombie();
+  void exportConfigJson(JsonObject &obj);
+  void importConfigJson(JsonObject &obj);
 
 protected:
   boolean m_setupWebHandlerAccessPointDone = false;

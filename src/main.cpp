@@ -33,11 +33,12 @@ RebootTrackerClass REBOOTTRACKER;
 
 #ifndef ON_DEV
 #define PMNAME "PowerMeters"
-#define PMBNAME "PowermetersBoard"
+#define PMBNAME PMNAME
 #else
 #define PMNAME "Dev-PowerMeters"
-#define PMBNAME "Dev-PowermetersBoard"
+#define PMBNAME PMNAME
 #endif
+char g_networkName[64];
 
 int m_NbBootPersistanceIndex = 0;
 #ifdef ENABLE_DEBUG_WEB
@@ -215,6 +216,9 @@ void setup() {
   DEBUG_INIT();
   delay(200);
   MAIN_DEBUG_MSG(F("Setup\n"));
+
+  uint32_t identifier = ESP.getChipId() ^ ESP.getFlashChipId();
+  snprintf(g_networkName, sizeof(g_networkName), "%s-%08X", PMNAME, identifier);
   MEMORYDEBUGGER.begin();
   size_t rtcoffset = 0;
 
@@ -256,8 +260,8 @@ void setup() {
         /*  Multicast DNS  */
         /*   Activation    */
         /*******************/
-        MAIN_DEBUG_MSG(F("Starting mDNS %s\n"), PMBNAME);
-        if (!MDNS.begin(PMBNAME)) {
+        MAIN_DEBUG_MSG(F("Starting mDNS %s\n"), g_networkName);
+        if (!MDNS.begin(g_networkName)) {
           MAIN_DEBUG_MSG(F("Fails to start mDNS\n"));
         } else {
           // Add service to MDNS-SD
@@ -332,7 +336,7 @@ void setup() {
 
   blinkSetup();
 
-  WIFIMANAGER.setup(PMNAME, &m_WebServer, m_fileSystem);
+  WIFIMANAGER.setup(g_networkName, &m_WebServer, m_fileSystem);
 #ifdef ESP8266
   WiFi.setSleepMode(
       WIFI_NONE_SLEEP); // Disable WiFi sleep to prevent wDev_ProcessFiq crashes
@@ -341,7 +345,7 @@ void setup() {
   REBOOTTRACKER.setup();
 
   // --- OTA Configuration (Over-The-Air Update) ---
-  ArduinoOTA.setHostname(PMBNAME);
+  ArduinoOTA.setHostname(g_networkName);
   ArduinoOTA.onStart([]() {
     g_ota_in_progress = true;
     String type;
