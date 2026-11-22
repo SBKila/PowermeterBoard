@@ -369,6 +369,8 @@ void setup() {
       type = "sketch";
     } else { // U_FS
       type = "filesystem";
+      MAIN_DEBUG_MSG("=== OTA: UNMOUNTING FILESYSTEM (LittleFS.end()) ===\n");
+      LittleFS.end();
     }
     MAIN_DEBUG_MSG("=== OTA START PHASE 3: UPDATE PROCESS BEGINNING (%s) ===\n", type.c_str());
 
