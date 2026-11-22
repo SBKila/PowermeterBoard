@@ -9,6 +9,7 @@
 #include <ESP8266WiFiGeneric.h>
 #include <ESPAsyncWebServer.h>
 #include <AsyncPing.h>
+#include <functional>
 
 #pragma once
 
@@ -58,6 +59,8 @@ public:
   bool isNetworkZombie();
   void exportConfigJson(JsonObject &obj);
   void importConfigJson(JsonObject &obj);
+  typedef std::function<bool()> ConnectivityCheckHandler;
+  void setConnectivityCheck(ConnectivityCheckHandler handler) { m_connectivityCheck = handler; }
 
 protected:
   boolean m_setupWebHandlerAccessPointDone = false;
@@ -130,6 +133,8 @@ protected:
   void _handleZombieDetection();
 
 private:
+  ConnectivityCheckHandler m_connectivityCheck = nullptr;
+  bool m_pingEverSucceeded = false;
   boolean m_isSoftAPDone = false;
   char *m_pName = NULL;
   int m_failedPingCount = 0;

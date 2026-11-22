@@ -90,15 +90,39 @@ void WIFIManagerClass::setup(const char *p_pName, AsyncWebServer *p_pWiFiServer,
               {
                 m_failedPingCount = 0;
                 m_isNetworkZombie = false;
+                m_pingEverSucceeded = true;
               }
               else
               {
-                m_failedPingCount++;
-                WIFIMGR_DEBUG_MSG(F("Ping failed. Count: %d/3\n"), m_failedPingCount);
-                if (m_failedPingCount >= 3)
-                  m_isNetworkZombie = true;
+                // Only consider zombie if ping has succeeded at least once in the past
+                // (otherwise the router simply does not respond to ICMP ping)
+                if (m_pingEverSucceeded)
+                {
+                  m_failedPingCount++;
+                  WIFIMGR_DEBUG_MSG(F("Ping failed. Count: %d/3\n"), m_failedPingCount);
+                  if (m_failedPingCount >= 3)
+                    m_isNetworkZombie = true;
+                }
+                else
+                {
+                  WIFIMGR_DEBUG_MSG(F("Ping failed but gateway never answered ICMP yet. Ignoring.\n"));
+                }
               }
               return true; });
+
+  if (isSettingExist())
+  {
+    WIFIMGR_DEBUG_MSG(F("Settings found, starting directly in STA mode.\n"));
+    m_targetWiFiMode = WIFI_STA;
+    _setupRadioAsStation(p_pWiFiServer, p_pfs);
+    m_WifiSetupState = WIFI_SETUP_IDLE;
+  }
+  else
+  {
+    WIFIMGR_DEBUG_MSG(F("No settings found, starting in AP mode.\n"));
+    m_targetWiFiMode = WIFI_AP_STA;
+    switchTo(SWITCHTOAPSTA);
+  }
 }
 
 void WIFIManagerClass::loop()
@@ -209,7 +233,10 @@ void WIFIManagerClass::loop()
               WiFi.disconnect(); // Force disconnect to clear zombie state
               m_isNetworkZombie = false;
             }
-            WiFi.begin(m_SettingsData.ssid_name, m_SettingsData.ssid_key);
+            if (WiFi.status() != WL_CONNECTED)
+            {
+              WiFi.begin(m_SettingsData.ssid_name, m_SettingsData.ssid_key);
+            }
           }
 
           // Check 15 minutes timeout (900,000 ms)
@@ -549,7 +576,16 @@ const char *WIFIManagerClass::_switchingActionToString(switchingAction action)
 void WIFIManagerClass::_setupRadioAsStation(AsyncWebServer *p_pWiFiServer,
                                             fs::FS *p_pfs)
 {
+  if ((WiFi.getMode() & WIFI_AP) != 0)
+  {
+    WiFi.softAPdisconnect(true);
+    m_isSoftAPDone = false;
+  }
   WiFi.mode(WIFI_STA);
+  WiFi.setAutoReconnect(true);
+#ifdef ESP8266
+  WiFi.setSleepMode(WIFI_NONE_SLEEP);
+#endif
   WIFIMGR_DEBUG_MSG(F("Connecting AS %s\n"), m_pName);
   WiFi.hostname(m_pName);
   WIFIMGR_DEBUG_MSG(F("Connecting WIFI %s\n"), m_SettingsData.ssid_name);
@@ -562,7 +598,10 @@ void WIFIManagerClass::_setupRadioAsAccessPoint()
 {
   WiFi.mode(WIFI_AP_STA);
   WIFIMGR_DEBUG_MSG(F("Starting softAP (%s)\n"), m_pName);
-  m_isSoftAPDone = WiFi.softAP(m_pName, "password", 8, false, 1);
+  int channel = WiFi.channel();
+  if (channel <= 0 || channel > 13)
+    channel = 1;
+  m_isSoftAPDone = WiFi.softAP(m_pName, "password", channel, false, 1);
 }
 
 void WIFIManagerClass::switchTo(switchingAction action)
@@ -592,6 +631,14 @@ boolean WIFIManagerClass::isSettingExist()
 
 void WIFIManagerClass::_handleZombieDetection()
 {
+  // If external connectivity (e.g. MQTT) is active, network is obviously NOT a zombie
+  if (m_connectivityCheck && m_connectivityCheck())
+  {
+    m_failedPingCount = 0;
+    m_isNetworkZombie = false;
+    return;
+  }
+
   if (WiFi.status() == WL_CONNECTED)
   {
     unsigned long now = millis();

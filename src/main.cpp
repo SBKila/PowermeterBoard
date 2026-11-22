@@ -342,6 +342,9 @@ void setup() {
       WIFI_NONE_SLEEP); // Disable WiFi sleep to prevent wDev_ProcessFiq crashes
 #endif
   POWERMETERBOARD.setup(PMNAME, &m_WebServer, *m_fileSystem);
+  WIFIMANAGER.setConnectivityCheck([]() {
+    return POWERMETERBOARD.isMqttConnected();
+  });
   REBOOTTRACKER.setup();
 
   // --- OTA Configuration (Over-The-Air Update) ---
