@@ -27,8 +27,6 @@ $("#setMQTT").on("pagecreate", function () {
       $("#mqttlogin").val(formData.get("mqtt_login"));
       $("#mqttpwd").val(formData.get("mqtt_pwd"));
 
-
-
       $.ajax({
         type: "POST",
         url: "./mqtt",
@@ -300,7 +298,7 @@ function _deletePM(pmIndex) {
     url: "./pm/" + pmIndex,
     contentType: "application/json",
     success: function (data, textStatus, jqXHR) {
-      const dio = pmReferenceToDio[pmIndex+1];
+      const dio = pmReferenceToDio[pmIndex + 1];
       if (_isPMSettings(dio)) {
         _removePMSettings(dio);
       }
@@ -331,7 +329,7 @@ jQuery.validator.addMethod(
   }, "erreur expression reguliere"
 );
 function _buildPowermeterDisplay(element, index) {
-  return '<h3> PM' + dioToPmReference[element.dIO] + ': <span id="name' + element.dIO + '">' + element.name + '</span><span class="ui-li-count" id="cumulative' + element.dIO + '">' + element.cumulative + '</span></h3>' +
+  return '<h3> PM' + dioToPmReference[element.dIO] + ': <span id="name' + element.dIO + '">' + element.name + '</span><span class="ui-li-count"><span id="instant' + element.dIO + '">' + (element.ip !== undefined ? parseFloat(element.ip).toFixed(3) + " kW" : "-- kW") + '</span> | <span id="cumulative' + element.dIO + '">' + element.cumulative + '</span></span></h3>' +
     '<form>' +
     '<div class="ui-grid-a">' +
     '<div class="ui-block-a">' +
@@ -432,6 +430,9 @@ $(document).ready(function () {
         } else {
           $("#cumulative" + element.dIO).html(element.cumulative);
           $("#ticks" + element.dIO).val(element.ticks);
+          if (element.ip !== undefined) {
+            $("#instant" + element.dIO).html(parseFloat(element.ip).toFixed(3) + " kW");
+          }
         }
       })
       return;
@@ -464,9 +465,45 @@ $(document).ready(function () {
       }
       return;
     }
+    // Scrutine data-vars responses and dispatch to DOM elements
+    if (pmdEvent.type === "sc") {
+      if (pmdEvent.datas) {
+        $("[data-var]").each(function() {
+          let varName = $(this).attr("data-var");
+          if (varName === "MQTTURL_FULL") {
+             // Exception handled cleanly: construct mqtt url
+             let domain = pmdEvent.datas["MQTTDOMAIN"] || "";
+             let port = pmdEvent.datas["MQTTPORT"] || "1883";
+             $(this).val("mqtt://" + domain + ":" + port);
+          } else if (pmdEvent.datas[varName] !== undefined) {
+             $(this).val(pmdEvent.datas[varName]);
+          }
+        });
+      }
+      return;
+    }
   };
   const wifiStatusToString = ["Idle", "No ssid avail", "Scan completed", "Connected", "Connect failed", "Connection lost", "Wrong password", "Disconnected"];
 
-  ws.onclose = function (evt) { console.log("WS:Connection closed."); };
+  ws.onopen = function (evt) { 
+    console.log("WS:Connection open ..."); 
+    // Ask for UI template variables implicitly
+    let varsToReq = [];
+    $("[data-var]").each(function() {
+        let v = $(this).attr("data-var");
+        if (v === "MQTTURL_FULL") {
+            if (!varsToReq.includes("MQTTDOMAIN")) varsToReq.push("MQTTDOMAIN");
+            if (!varsToReq.includes("MQTTPORT")) varsToReq.push("MQTTPORT");
+        } else {
+            if (!varsToReq.includes(v)) varsToReq.push(v);
+        }
+    });
+    if (varsToReq.length > 0) {
+        ws.send(JSON.stringify({
+            "type": "req_vars",
+            "vars": varsToReq
+        }));
+    }
+  };
   ws.onerror = function (evt) { console.log("WS:WebSocket error : " + evt.data) };
 });

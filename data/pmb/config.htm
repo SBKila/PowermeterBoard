@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Config Backup & Restore</title>
+
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="./powermeter.css">
+	<link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+	<script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+	<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+</head>
+
+<body>
+	<div data-role="page" id="configpage">
+		<div data-role="header">
+			<h1>Backup & Restore</h1>
+			<a href="index.htm" data-icon="carat-l" class="ui-btn-left" data-iconpos="notext" rel="external" data-ajax="false">Back</a>
+		</div><!-- /header -->
+		<div role="main" class="ui-content">
+			<div data-role="header" data-mini="true">
+				<h2>Export Configuration</h2>
+			</div>
+			<div data-role="main" class="ui-content">
+				<p>Download a backup of your current configuration (WiFi, MQTT, Powermeters).</p>
+				<form action="/pmb/config/export" method="POST" data-ajax="false">
+					<div class="ui-field-contain">
+						<label for="export_pwd">Backup Password:</label>
+						<input type="password" id="export_pwd" name="pwd" required>
+					</div>
+					<input data-role="submit" type="submit" value="Download Backup" class="ui-btn ui-corner-all">
+				</form>
+			</div>
+
+			<div data-role="header" data-mini="true">
+				<h2>Import Configuration</h2>
+			</div>
+			<div data-role="main" class="ui-content">
+				<p>Restore your configuration from a backup file. <strong>This will reboot the device.</strong></p>
+				<form action="/pmb/config/import" method="POST" enctype="multipart/form-data" data-ajax="false">
+					<div class="ui-field-contain">
+						<label for="import_pwd">Backup Password:</label>
+						<input type="password" id="import_pwd" name="pwd" required>
+					</div>
+					<div class="ui-field-contain">
+						<label for="import_file">Backup File (.enc):</label>
+						<input type="file" id="import_file" name="backup" accept=".enc" required>
+					</div>
+					<input data-role="submit" type="submit" value="Restore Configuration" class="ui-btn ui-corner-all">
+				</form>
+			</div>
+		</div>
+		<div id="footer" data-role="footer">
+			<embed class="logo" src="./KPLogo.svg">
+		</div><!-- /footer -->
+	</div><!-- /page -->
+</body>
+
+</html>

@@ -1,0 +1,38 @@
+# PowermeterBoard Project Context for LLMs
+
+## Architecture Overview
+The PowermeterBoard is an ESP8266-based device (using PlatformIO) designed to read energy pulses from DDS238 power meters via GPIO and report data to Home Assistant using MQTT.
+
+## Key Dependencies
+- **HomeAssistantLibrary (HALib)**: A custom library to manage MQTT discovery and entities for Home Assistant. (Located in `.pio/libdeps/nodemcuv2/HomeAssistantLibrary/`).
+- **ESPAsyncWebServer**: For serving the local configuration web interface and WebSocket events.
+- **EEPROMEX**: For persistent storage of power meter configurations and cumulative data across reboots.
+- **ArduinoJson**: For parsing and generating JSON payloads for HTTP API and WebSockets.
+
+## Source Conventions
+- All comments must be written in English.
+- Use `PROGMEM` (`F()`) macros for static debug strings to keep RAM usage low.
+- Diagnostic entities (Memory, Wi-Fi RSSI, MQTT status, Network status) should be assigned the "diagnostic" entity category in Home Assistant.
+
+## Key Files
+- `src/main.cpp`: Entry point, setup of WifiManager, PowermeterBoard, and main loop.
+- `src/PowermetersBoard.hpp`: Core class managing multiple power meters, web handlers for configuration, and WebSocket broadcasts.
+- `src/WifiManager.hpp / .cpp`: Handles Wi-Fi connectivity, AP fallback, and reconnection logic (Zombie detection).
+- `src/Powermeter.hpp`: Wraps the power meter logic using `HALib` components.
+- `platformio.ini`: PlatformIO config (target NodeMCU v2, ESP8266).
+
+## Web UI Data Dictionary
+The Web UI (SPA) requests data via WebSockets using `req_vars` containing an array of keys. The backend parses them through the `stringProcessor` waterfall. Expected keys are:
+- `NODENAME`: The MQTT device node name
+- `MQTTDOMAIN`: MQTT host
+- `MQTTPORT`: MQTT port
+- `MQTTLOGIN`: MQTT login
+- `MQTTPWD`: MQTT password
+- `MQTTCONNECTIONSTATUS`: MQTT state ("Connected" / "Disconnected")
+- `SSIDNAME`: WiFi SSID Name
+- `WIFICONNECTIONSTATUS`: WiFi connection state ("Connected" / "Not connected")
+- `WIFINETWORKIP`: WiFi IP string
+- `WIFIRSSI`: WiFi RSSI level in dBm
+- `RELEASE`: Firmware string defined by `BUILD_VERSION_STRING`
+- `EEPROM`, `FS_STARTED`, `FS_USED`, `FS_TOTAL`: Internal system diagnostics
+- `BLINKER_STATE`: Textual LED state (Heartbeat, Zombie, etc.)

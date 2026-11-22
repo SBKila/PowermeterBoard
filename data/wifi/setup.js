@@ -6,12 +6,10 @@ $(document).ready(function () {
     ws.onmessage = function (evt) {
         //console.log("WS:Received Message: (%s) %s", evt.type, evt.data);
         try {
-
             var message = JSON.parse(evt.data);
-
             switch (message.evt) {
                 case 0:
-                    window.location = 'http://'+message.data;
+                    window.location = 'http://' + message.data;
                     break;
                 case 1:
                     var items = [];
@@ -34,6 +32,11 @@ $(document).ready(function () {
                         }
                     });
                     break;
+                case 2:
+                    if (message.data && message.data.ssid_name) {
+                        $("#ssid-name").val(message.data.ssid_name);
+                    }
+                    break;
             }
         } catch (e) {
             $("#lastlog").prepend("<p>" + evt.data + "</p>");
@@ -53,7 +56,7 @@ $(document).ready(function () {
 
     $("#btn-save-settings").on("click", function () {
         const formData = new FormData($("#form-wifi")[0]);
-        
+
         $.ajax({
             type: "POST",
             url: "/wifi",
@@ -61,10 +64,10 @@ $(document).ready(function () {
             contentType: "application/json",
             dataType: "json",
             success: function (data, textStatus, jqXHR) {
-                $("#btn-save-settings").disable();
+                $("#btn-save-settings").prop("disabled", true);
             },
             error: function (data, textStatus, jqXHR) {
-              alert(textStatus);
+                alert(textStatus);
             }
         }
         );

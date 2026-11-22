@@ -4,7 +4,7 @@
 			"path": "."
 		},
 		{
-			"path": "..\\HomeAssistantLibrary"
+			"path": "../HomeAssistantLibrary"
 		}
 	],
 	"settings": {
