@@ -2,6 +2,14 @@ Import("env", "projenv")
 import json
 import os
 
+# Fix PlatformIO bug (Issue #263 / PR #314): uploadfsota does not pass '-s' to espota.py in platform 4.2.1
+try:
+    if any("uploadfsota" in str(t) for t in COMMAND_LINE_TARGETS):
+        env.Append(UPLOADERFLAGS=["-s"])
+        print("[OTA FIX] Injected '-s' flag into UPLOADERFLAGS for uploadfsota")
+except Exception as e:
+    print(f"[OTA FIX] Could not inspect targets: {e}")
+
 # Fonction pour récupérer les valeurs des drapeaux de compilation
 def get_cppdefine_value(flag_name):
     build_flags = env.ParseFlags(env['BUILD_FLAGS'])

@@ -1,12 +1,24 @@
-#footer {
+#footer, div[data-role="footer"] {
     height: 35px;
     padding: 5px;
+    position: relative;
 }
 
-#footer .logo {
+#footer .logo, div[data-role="footer"] .logo {
     height: 100%;
     display: block;
     margin: auto;
+}
+
+.version-label {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    opacity: 0.75;
+    font-weight: normal;
+    pointer-events: none;
 }
 
 label.error {

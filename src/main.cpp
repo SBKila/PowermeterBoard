@@ -342,6 +342,9 @@ void setup() {
       WIFI_NONE_SLEEP); // Disable WiFi sleep to prevent wDev_ProcessFiq crashes
 #endif
   POWERMETERBOARD.setup(PMNAME, &m_WebServer, *m_fileSystem);
+  WIFIMANAGER.setConnectivityCheck([]() {
+    return POWERMETERBOARD.isMqttConnected();
+  });
   REBOOTTRACKER.setup();
 
   // --- OTA Configuration (Over-The-Air Update) ---
@@ -366,6 +369,8 @@ void setup() {
       type = "sketch";
     } else { // U_FS
       type = "filesystem";
+      MAIN_DEBUG_MSG("=== OTA: UNMOUNTING FILESYSTEM (LittleFS.end()) ===\n");
+      LittleFS.end();
     }
     MAIN_DEBUG_MSG("=== OTA START PHASE 3: UPDATE PROCESS BEGINNING (%s) ===\n", type.c_str());
 
