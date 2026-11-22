@@ -729,6 +729,13 @@ public:
       return (m_pPowerMeterDevice && m_pPowerMeterDevice->isMqttconnected())
                  ? "Connected"
                  : "Disconnected";
+    if (variable == "RELEASE" || variable == "VERSION") {
+#ifdef BUILD_VERSION_STRING
+      return String(BUILD_VERSION_STRING);
+#else
+      return String("0.2");
+#endif
+    }
 
     return "";
   };

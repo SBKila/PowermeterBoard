@@ -476,7 +476,16 @@ $(document).ready(function () {
              let port = pmdEvent.datas["MQTTPORT"] || "1883";
              $(this).val("mqtt://" + domain + ":" + port);
           } else if (pmdEvent.datas[varName] !== undefined) {
-             $(this).val(pmdEvent.datas[varName]);
+             let val = pmdEvent.datas[varName];
+             if ($(this).is("input, select, textarea")) {
+               $(this).val(val);
+             } else {
+               if (varName === "RELEASE") {
+                 $(this).text(val.startsWith("v") ? val : "v" + val);
+               } else {
+                 $(this).text(val);
+               }
+             }
           }
         });
       }
